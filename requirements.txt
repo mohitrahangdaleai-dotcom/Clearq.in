@@ -4,7 +4,6 @@ flask-login
 scikit-learn
 pandas
 numpy
-gunicorn
 werkzeug
 psycopg2-binary
-
+gunicorn
