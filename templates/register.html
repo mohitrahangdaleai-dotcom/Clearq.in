@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="max-w-md mx-auto mt-10 bg-white p-8 rounded-lg shadow-md mb-10">
+    <h2 class="text-2xl font-bold text-center mb-6">Join ClearQ</h2>
+    
+    <div class="flex justify-center mb-6">
+        <button onclick="switchTab('learner')" id="btn-learner" class="px-4 py-2 bg-indigo-600 text-white rounded-l-md">As Learner</button>
+        <button onclick="switchTab('mentor')" id="btn-mentor" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-r-md">As Mentor</button>
+    </div>
+
+    <form method="POST" action="{{ url_for('register') }}">
+        <input type="hidden" name="role" id="role-input" value="learner">
+        
+        <div class="mb-4">
+            <label class="block text-gray-700 mb-2">Username</label>
+            <input type="text" name="username" required class="w-full p-2 border rounded focus:outline-none focus:border-indigo-500">
+        </div>
+        
+        <div class="mb-4">
+            <label class="block text-gray-700 mb-2">Email</label>
+            <input type="email" name="email" required class="w-full p-2 border rounded focus:outline-none focus:border-indigo-500">
+        </div>
+        
+        <div class="mb-4">
+            <label class="block text-gray-700 mb-2">Password</label>
+            <input type="password" name="password" required class="w-full p-2 border rounded focus:outline-none focus:border-indigo-500">
+        </div>
+
+        <!-- Mentor Specific Fields (Hidden by default) -->
+        <div id="mentor-fields" class="hidden space-y-4 border-t pt-4">
+            <p class="text-sm text-gray-500 font-semibold">Mentor Details</p>
+            <div>
+                <label class="block text-gray-700 mb-1">Domain</label>
+                <input type="text" name="domain" placeholder="e.g. Data Science, Marketing" class="w-full p-2 border rounded">
+            </div>
+            <div>
+                <label class="block text-gray-700 mb-1">Current Company</label>
+                <input type="text" name="company" placeholder="e.g. Google, Startup" class="w-full p-2 border rounded">
+            </div>
+            <div>
+                <label class="block text-gray-700 mb-1">Services Offered</label>
+                <input type="text" name="services" placeholder="e.g. Resume Review, Mock Interview" class="w-full p-2 border rounded">
+            </div>
+            <div>
+                <label class="block text-gray-700 mb-1">Price per session (₹)</label>
+                <input type="number" name="price" placeholder="500" class="w-full p-2 border rounded">
+            </div>
+            <div>
+                <label class="block text-gray-700 mb-1">Bio</label>
+                <textarea name="bio" rows="3" placeholder="Tell us about your experience..." class="w-full p-2 border rounded"></textarea>
+            </div>
+        </div>
+
+        <button type="submit" class="w-full bg-indigo-600 text-white py-2 rounded mt-6 hover:bg-indigo-700 transition">Create Account</button>
+    </form>
+</div>
+
+<script>
+    function switchTab(role) {
+        document.getElementById('role-input').value = role;
+        const mentorFields = document.getElementById('mentor-fields');
+        const btnLearner = document.getElementById('btn-learner');
+        const btnMentor = document.getElementById('btn-mentor');
+
+        if (role === 'mentor') {
+            mentorFields.classList.remove('hidden');
+            btnMentor.classList.add('bg-indigo-600', 'text-white');
+            btnMentor.classList.remove('bg-gray-200', 'text-gray-700');
+            btnLearner.classList.remove('bg-indigo-600', 'text-white');
+            btnLearner.classList.add('bg-gray-200', 'text-gray-700');
+        } else {
+            mentorFields.classList.add('hidden');
+            btnLearner.classList.add('bg-indigo-600', 'text-white');
+            btnLearner.classList.remove('bg-gray-200', 'text-gray-700');
+            btnMentor.classList.remove('bg-indigo-600', 'text-white');
+            btnMentor.classList.add('bg-gray-200', 'text-gray-700');
+        }
+    }
+</script>
+{% endblock %}

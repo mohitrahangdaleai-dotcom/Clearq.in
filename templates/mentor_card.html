@@ -1,0 +1,20 @@
+<div class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition duration-300 flex flex-col">
+    <div class="p-6 flex-grow">
+        <div class="flex justify-between items-start">
+            <div>
+                <h4 class="text-lg font-bold text-gray-900">{{ mentor.username }}</h4>
+                <p class="text-sm text-indigo-600 font-semibold">{{ mentor.company }}</p>
+            </div>
+            <span class="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">{{ mentor.domain }}</span>
+        </div>
+        <p class="text-gray-500 text-sm mt-3 line-clamp-3">{{ mentor.bio }}</p>
+        <div class="mt-4 pt-4 border-t border-gray-100">
+            <p class="text-xs text-gray-400 uppercase tracking-wide">Services</p>
+            <p class="text-sm text-gray-700">{{ mentor.services }}</p>
+        </div>
+    </div>
+    <div class="bg-gray-50 px-6 py-4 flex justify-between items-center border-t border-gray-100">
+        <span class="font-bold text-gray-900">₹{{ mentor.price }}<span class="text-sm font-normal text-gray-500">/session</span></span>
+        <a href="{{ url_for('mentor_detail', id=mentor.id) }}" class="text-indigo-600 font-semibold hover:text-indigo-800">View Profile &rarr;</a>
+    </div>
+</div>
