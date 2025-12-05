@@ -6,3 +6,5 @@ pandas
 numpy
 gunicorn
 werkzeug
+psycopg2-binary
+
