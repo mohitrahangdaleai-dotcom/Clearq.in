@@ -7,7 +7,11 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import linear_kernel
 import pandas as pd
 
-app = Flask(__name__)
+
+template_dir = os.path.abspath(os.path.dirname(__file__))
+template_dir = os.path.join(template_dir, 'templates')
+
+app = Flask(__name__, template_folder=template_dir)
 app.config['SECRET_KEY'] = 'clearq-secret-key-change-this-in-prod'
 
 # Database Configuration
@@ -232,4 +236,5 @@ with app.app_context():
         db.session.commit()
 
 if __name__ == '__main__':
+
     app.run(debug=True)
