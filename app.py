@@ -7,16 +7,21 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import linear_kernel
 import pandas as pd
 
+# --- FORCE FLASK TO FIND TEMPLATES ---
+# 1. Get the folder where THIS file (app.py) is located
+basedir = os.path.abspath(os.path.dirname(__file__))
 
-template_dir = os.path.abspath(os.path.dirname(__file__))
-template_dir = os.path.join(template_dir, 'templates')
+# 2. Tell Flask specifically where the 'templates' folder is
+template_dir = os.path.join(basedir, 'templates')
 
+# 3. Initialize Flask with this explicit path
 app = Flask(__name__, template_folder=template_dir)
+# -------------------------------------
+
 app.config['SECRET_KEY'] = 'clearq-secret-key-change-this-in-prod'
 
 # Database Configuration
 # Use SQLite for local dev, but allow switching to Postgres for hosting
-basedir = os.path.abspath(os.path.dirname(__file__))
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL') or \
     'sqlite:///' + os.path.join(basedir, 'clearq.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
@@ -66,42 +71,81 @@ def get_ai_recommendations(user_goal):
     """
     Uses Scikit-Learn to find mentors whose bios/domains match the user's goal.
     """
-    mentors = User.query.filter_by(role='mentor', is_verified=True).all()
-    if not mentors:
+    try:
+        mentors = User.query.filter_by(role='mentor', is_verified=True).all()
+        if not mentors:
+            return []
+
+        # Prepare data for AI
+        mentor_data = []
+        for m in mentors:
+            # Combine relevant fields into a single 'content' string
+            content = f"{m.domain} {m.company} {m.services} {m.bio}"
+            mentor_data.append({'id': m.id, 'content': content, 'obj': m})
+
+        if not mentor_data:
+            return []
+
+        # Add user goal to the corpus
+        corpus = [m['content'] for m in mentor_data]
+        corpus.append(user_goal)
+
+        # TF-IDF Vectorization
+        tfidf = TfidfVectorizer(stop_words='english')
+        tfidf_matrix = tfidf.fit_transform(corpus)
+
+        # Calculate Cosine Similarity
+        # The last item in matrix is the user_goal. Compare it with all others.
+        cosine_sim = linear_kernel(tfidf_matrix[-1], tfidf_matrix[:-1])
+        
+        # Get similarity scores
+        scores = list(enumerate(cosine_sim[0]))
+        scores = sorted(scores, key=lambda x: x[1], reverse=True)
+
+        # Return top 3 matched mentor objects
+        recommended_mentors = []
+        for i, score in scores[:3]:
+            if score > 0.1: # Threshold to filter completely irrelevant matches
+                recommended_mentors.append(mentor_data[i]['obj'])
+                
+        return recommended_mentors
+    except Exception as e:
+        print(f"AI Error: {e}")
         return []
 
-    # Prepare data for AI
-    mentor_data = []
-    for m in mentors:
-        # Combine relevant fields into a single 'content' string
-        content = f"{m.domain} {m.company} {m.services} {m.bio}"
-        mentor_data.append({'id': m.id, 'content': content, 'obj': m})
-
-    # Add user goal to the corpus
-    corpus = [m['content'] for m in mentor_data]
-    corpus.append(user_goal)
-
-    # TF-IDF Vectorization
-    tfidf = TfidfVectorizer(stop_words='english')
-    tfidf_matrix = tfidf.fit_transform(corpus)
-
-    # Calculate Cosine Similarity
-    # The last item in matrix is the user_goal. Compare it with all others.
-    cosine_sim = linear_kernel(tfidf_matrix[-1], tfidf_matrix[:-1])
-    
-    # Get similarity scores
-    scores = list(enumerate(cosine_sim[0]))
-    scores = sorted(scores, key=lambda x: x[1], reverse=True)
-
-    # Return top 3 matched mentor objects
-    recommended_mentors = []
-    for i, score in scores[:3]:
-        if score > 0.1: # Threshold to filter completely irrelevant matches
-            recommended_mentors.append(mentor_data[i]['obj'])
-            
-    return recommended_mentors
-
 # --- ROUTES ---
+
+# DEBUG ROUTE: Helps diagnose file path issues on Render
+@app.route('/debug')
+def debug_paths():
+    output = "<h2>Current Directory Files:</h2>"
+    
+    # Get the current working directory
+    cwd = os.getcwd()
+    output += f"<b>Current Folder:</b> {cwd}<br><br>"
+    
+    # List files in current folder
+    try:
+        files = os.listdir(cwd)
+        output += "<br>".join(files)
+    except Exception as e:
+        output += f"Error listing files: {e}"
+
+    # Check specifically for templates
+    # We use the variable 'template_dir' we defined at the top
+    output += f"<br><br><h2>Looking for templates at: {template_dir}</h2>"
+    
+    if os.path.exists(template_dir):
+        output += "<b>Found templates folder! Contents:</b><br>"
+        try:
+            tpl_files = os.listdir(template_dir)
+            output += "<br>".join(tpl_files)
+        except Exception as e:
+            output += f"Error reading templates folder: {e}"
+    else:
+        output += "<b style='color:red'>Templates folder NOT found here!</b>"
+        
+    return output
 
 @app.route('/')
 def index():
@@ -236,5 +280,4 @@ with app.app_context():
         db.session.commit()
 
 if __name__ == '__main__':
-
     app.run(debug=True)
