@@ -1,20 +1,113 @@
-<div class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition duration-300 flex flex-col">
-    <div class="p-6 flex-grow">
-        <div class="flex justify-between items-start">
-            <div>
-                <h4 class="text-lg font-bold text-gray-900">{{ mentor.username }}</h4>
-                <p class="text-sm text-indigo-600 font-semibold">{{ mentor.company }}</p>
+<div class="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 group">
+    <!-- Header with gradient -->
+    <div class="h-3 bg-gradient-to-r from-primary to-secondary"></div>
+    
+    <div class="p-6">
+        <!-- Mentor Info -->
+        <div class="flex items-start justify-between mb-4">
+            <div class="flex items-center gap-4">
+                <div class="w-14 h-14 rounded-xl bg-gradient-to-br from-primary/20 to-secondary/20 flex items-center justify-center group-hover:scale-110 transition-transform">
+                    <span class="text-xl font-bold text-primary">{{ mentor.username[0]|upper }}</span>
+                </div>
+                <div>
+                    <h4 class="text-lg font-bold text-gray-900">{{ mentor.full_name or mentor.username }}</h4>
+                    <p class="text-sm text-gray-600 flex items-center gap-1">
+                        <i class="fas fa-building text-xs"></i>
+                        {{ mentor.company }}
+                    </p>
+                </div>
             </div>
-            <span class="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">{{ mentor.domain }}</span>
+            
+            <!-- Verification Badge -->
+            {% if mentor.is_verified %}
+            <span class="px-3 py-1 bg-green-100 text-green-800 rounded-full text-xs font-semibold flex items-center gap-1">
+                <i class="fas fa-check-circle"></i>
+                Verified
+            </span>
+            {% endif %}
         </div>
-        <p class="text-gray-500 text-sm mt-3 line-clamp-3">{{ mentor.bio }}</p>
-        <div class="mt-4 pt-4 border-t border-gray-100">
-            <p class="text-xs text-gray-400 uppercase tracking-wide">Services</p>
+        
+        <!-- Domain Badge -->
+        <div class="mb-4">
+            <span class="px-4 py-2 bg-gradient-to-r from-primary/10 to-secondary/10 text-primary rounded-full text-sm font-semibold">
+                {{ mentor.domain }}
+            </span>
+        </div>
+        
+        <!-- Bio -->
+        <p class="text-gray-600 text-sm mb-4 line-clamp-3">{{ mentor.bio }}</p>
+        
+        <!-- Skills -->
+        {% if mentor.skills %}
+        <div class="mb-4">
+            <p class="text-xs font-semibold text-gray-500 uppercase mb-2">Skills</p>
+            <div class="flex flex-wrap gap-2">
+                {% for skill in mentor.skills.split(',')[:3] %}
+                <span class="px-3 py-1 bg-gray-100 text-gray-800 rounded-full text-xs">
+                    {{ skill }}
+                </span>
+                {% endfor %}
+                {% if mentor.skills.split(',').length > 3 %}
+                <span class="px-3 py-1 bg-gray-100 text-gray-800 rounded-full text-xs">
+                    +{{ mentor.skills.split(',').length - 3 }} more
+                </span>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- Services -->
+        <div class="mb-6">
+            <p class="text-xs font-semibold text-gray-500 uppercase mb-2">Services</p>
             <p class="text-sm text-gray-700">{{ mentor.services }}</p>
         </div>
+        
+        <!-- Experience & Rating -->
+        <div class="flex items-center justify-between text-sm text-gray-600 mb-6">
+            {% if mentor.experience %}
+            <div class="flex items-center gap-2">
+                <i class="fas fa-briefcase text-primary"></i>
+                <span>{{ mentor.experience }}</span>
+            </div>
+            {% endif %}
+            
+            <div class="flex items-center gap-2">
+                <i class="fas fa-star text-yellow-500"></i>
+                <span>4.9</span>
+                <span class="text-gray-400">(24 reviews)</span>
+            </div>
+        </div>
     </div>
-    <div class="bg-gray-50 px-6 py-4 flex justify-between items-center border-t border-gray-100">
-        <span class="font-bold text-gray-900">₹{{ mentor.price }}<span class="text-sm font-normal text-gray-500">/session</span></span>
-        <a href="{{ url_for('mentor_detail', id=mentor.id) }}" class="text-indigo-600 font-semibold hover:text-indigo-800">View Profile &rarr;</a>
+    
+    <!-- Footer with price & CTA -->
+    <div class="px-6 py-4 bg-gradient-to-r from-gray-50 to-white border-t border-gray-100">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-2xl font-bold text-primary">₹{{ mentor.price }}</p>
+                <p class="text-xs text-gray-500">per session</p>
+            </div>
+            
+            <a href="{{ url_for('mentor_detail', id=mentor.id) }}" 
+               class="px-6 py-2 bg-gradient-to-r from-primary to-secondary text-white font-semibold rounded-xl hover:shadow-lg transition-all transform hover:-translate-y-1 flex items-center gap-2 group-hover:scale-105">
+                Book Now
+                <i class="fas fa-arrow-right group-hover:translate-x-1 transition-transform"></i>
+            </a>
+        </div>
+        
+        <!-- Quick Stats -->
+        <div class="flex items-center justify-center gap-6 mt-4 pt-4 border-t border-gray-200">
+            <div class="text-center">
+                <p class="text-sm font-semibold text-gray-900">50+</p>
+                <p class="text-xs text-gray-500">Sessions</p>
+            </div>
+            <div class="text-center">
+                <p class="text-sm font-semibold text-gray-900">94%</p>
+                <p class="text-xs text-gray-500">Success Rate</p>
+            </div>
+            <div class="text-center">
+                <p class="text-sm font-semibold text-gray-900">24</p>
+                <p class="text-xs text-gray-500">Reviews</p>
+            </div>
+        </div>
     </div>
 </div>
