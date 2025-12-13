@@ -3,44 +3,882 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ClearQ - Mentorship Platform</title>
+    <title>{% block title %}ClearQ | Premium Mentorship Platform{% endblock %}</title>
+    
+    <!-- Fonts & Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    
+    <style>
+        /* --- OLD PAGE STYLING --- */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        :root {
+            --primary: #2563eb;
+            --primary-dark: #1d4ed8;
+            --primary-gradient: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%);
+            --secondary: #7c3aed;
+            --dark: #0f172a;
+            --text-body: #334155;
+            --text-light: #64748b;
+            --bg-light: #f8fafc;
+            --white: #ffffff;
+            --border-radius: 16px;
+            --shadow-sm: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+            --shadow-md: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.025);
+            --shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.05), 0 10px 10px -5px rgba(0, 0, 0, 0.02);
+            --shadow-color: rgba(37, 99, 235, 0.2);
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            line-height: 1.6;
+            color: var(--text-body);
+            background-color: var(--bg-light);
+            overflow-x: hidden;
+        }
+
+        h1, h2, h3, h4 {
+            color: var(--dark);
+            font-weight: 700;
+            letter-spacing: -0.025em;
+        }
+
+        a { 
+            text-decoration: none; 
+            color: inherit;
+        }
+        
+        /* Utility for Animations */
+        .reveal {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: all 0.8s ease-out;
+        }
+        .reveal.active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* --- HEADER --- */
+        header {
+            background-color: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            padding: 1rem 1.5rem;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+        }
+
+        .header-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .logo {
+            font-size: 1.6rem;
+            font-weight: 800;
+            color: var(--dark);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .logo i {
+            background: var(--primary-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-size: 1.8rem;
+        }
+
+        .logo span {
+            color: var(--primary);
+        }
+
+        .nav-links {
+            display: flex;
+            list-style: none;
+            gap: 2rem;
+        }
+
+        .nav-links a {
+            color: var(--text-body);
+            font-weight: 500;
+            font-size: 0.95rem;
+            transition: var(--transition);
+            position: relative;
+        }
+
+        .nav-links a:hover {
+            color: var(--primary);
+        }
+
+        /* Nav Buttons */
+        .nav-buttons {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .login-button {
+            color: var(--dark);
+            font-weight: 600;
+            padding: 0.6rem 1.2rem;
+            border-radius: 8px;
+            transition: var(--transition);
+        }
+
+        .login-button:hover {
+            color: var(--primary);
+            background: rgba(37, 99, 235, 0.05);
+        }
+
+        /* CTA Button */
+        .cta-button {
+            background: var(--primary-gradient);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 50px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            box-shadow: 0 4px 15px var(--shadow-color);
+            position: relative;
+            overflow: hidden;
+            z-index: 1;
+            display: inline-block;
+            text-align: center;
+        }
+
+        .cta-button::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: linear-gradient(135deg, #1d4ed8 0%, #6d28d9 100%);
+            opacity: 0;
+            z-index: -1;
+            transition: opacity 0.3s ease;
+        }
+
+        .cta-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px var(--shadow-color);
+        }
+
+        .cta-button:hover::before {
+            opacity: 1;
+        }
+
+        /* Career Mentorship Program Button - Most Visible */
+        .career-program-btn {
+            background: linear-gradient(135deg, #FF512F 0%, #F09819 100%);
+            color: white;
+            border: none;
+            padding: 0.85rem 2rem;
+            border-radius: 50px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: var(--transition);
+            box-shadow: 0 8px 25px rgba(255, 81, 47, 0.4);
+            font-size: 1.1rem;
+            position: relative;
+            overflow: hidden;
+            z-index: 1;
+            animation: pulse 2s infinite;
+            display: inline-block;
+            text-align: center;
+        }
+
+        .career-program-btn::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: linear-gradient(135deg, #F09819 0%, #FF512F 100%);
+            opacity: 0;
+            z-index: -1;
+            transition: opacity 0.3s ease;
+        }
+
+        .career-program-btn:hover::before {
+            opacity: 1;
+        }
+
+        .career-program-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 30px rgba(255, 81, 47, 0.5);
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(255, 81, 47, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(255, 81, 47, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(255, 81, 47, 0); }
+        }
+
+        /* Secondary Button */
+        .secondary-button {
+            background: white;
+            color: var(--dark);
+            border: 1px solid #e2e8f0;
+            padding: 0.7rem 1.5rem;
+            border-radius: 50px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            display: inline-block;
+            text-align: center;
+        }
+
+        .secondary-button:hover {
+            border-color: var(--dark);
+            transform: translateY(-2px);
+        }
+
+        .menu-toggle {
+            display: none;
+            font-size: 1.5rem;
+            color: var(--dark);
+            cursor: pointer;
+        }
+
+        /* --- HERO SECTION --- */
+        .hero {
+            padding: 6rem 1.5rem 4rem;
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1.2fr 0.8fr;
+            gap: 3rem;
+            align-items: center;
+            position: relative;
+        }
+        
+        /* Abstract Background Element */
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: -100px;
+            right: -100px;
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, rgba(124, 58, 237, 0.08) 0%, rgba(37, 99, 235, 0.03) 70%, transparent 100%);
+            z-index: -1;
+            border-radius: 50%;
+        }
+
+        .hero-content {
+            text-align: left;
+        }
+
+        .hero-label {
+            display: inline-block;
+            background: rgba(37, 99, 235, 0.1);
+            color: var(--primary);
+            font-size: 0.85rem;
+            font-weight: 600;
+            padding: 0.4rem 1rem;
+            border-radius: 20px;
+            margin-bottom: 1.5rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .hero h1 {
+            font-size: clamp(2.5rem, 5vw, 3.8rem);
+            line-height: 1.1;
+            margin-bottom: 1.5rem;
+            color: var(--dark);
+        }
+
+        .hero h1 span {
+            background: var(--primary-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .hero p {
+            font-size: 1.15rem;
+            color: var(--text-light);
+            margin-bottom: 2.5rem;
+            max-width: 90%;
+            line-height: 1.7;
+        }
+
+        .hero-buttons {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        /* Hero Visual Side */
+        .hero-visual {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .stat-card-floating {
+            background: white;
+            padding: 1.5rem;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow-lg);
+            border: 1px solid rgba(255,255,255,0.5);
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            animation: float 6s ease-in-out infinite;
+        }
+        
+        .stat-card-floating:nth-child(2) {
+            margin-left: 3rem;
+            animation-delay: 1.5s;
+        }
+        
+        .stat-card-floating:nth-child(3) {
+            animation-delay: 3s;
+        }
+
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0px); }
+        }
+
+        .stat-icon-box {
+            width: 50px;
+            height: 50px;
+            border-radius: 12px;
+            background: rgba(37, 99, 235, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--primary);
+            font-size: 1.2rem;
+        }
+
+        .stat-info h4 {
+            font-size: 1.5rem;
+            margin-bottom: 0px;
+        }
+
+        .stat-info p {
+            font-size: 0.85rem;
+            color: var(--text-light);
+            margin: 0;
+            line-height: 1.4;
+        }
+
+        /* --- CATEGORIES --- */
+        .section-padding {
+            padding: 6rem 1.5rem;
+        }
+
+        .section-header {
+            text-align: center;
+            margin-bottom: 4rem;
+            max-width: 700px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .section-header h2 {
+            font-size: 2.2rem;
+            margin-bottom: 1rem;
+        }
+
+        .section-header p {
+            color: var(--text-light);
+            font-size: 1.1rem;
+        }
+
+        .category-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .category-card {
+            background: white;
+            border-radius: var(--border-radius);
+            padding: 2rem;
+            box-shadow: var(--shadow-sm);
+            border: 1px solid #f1f5f9;
+            transition: var(--transition);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .category-card:hover {
+            transform: translateY(-8px);
+            box-shadow: var(--shadow-lg);
+            border-color: rgba(37, 99, 235, 0.2);
+        }
+
+        .category-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; width: 4px; height: 0%;
+            background: var(--primary-gradient);
+            transition: 0.4s ease;
+        }
+
+        .category-card:hover::before {
+            height: 100%;
+        }
+
+        .category-icon {
+            width: 56px;
+            height: 56px;
+            background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 1.5rem;
+            color: var(--primary);
+            font-size: 1.5rem;
+        }
+
+        .category-card h3 {
+            font-size: 1.25rem;
+            margin-bottom: 1rem;
+        }
+
+        .category-card ul {
+            list-style: none;
+        }
+
+        .category-card li {
+            font-size: 0.95rem;
+            color: var(--text-light);
+            margin-bottom: 0.6rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .category-card li i {
+            color: #10b981;
+            font-size: 0.8rem;
+        }
+
+        /* --- HOW IT WORKS --- */
+        .how-it-works {
+            background-color: white;
+            position: relative;
+        }
+
+        .steps-container {
+            display: flex;
+            justify-content: space-between;
+            max-width: 1100px;
+            margin: 0 auto;
+            position: relative;
+            gap: 2rem;
+        }
+
+        /* Connecting Line for Desktop */
+        .steps-container::after {
+            content: '';
+            position: absolute;
+            top: 40px;
+            left: 50px;
+            right: 50px;
+            height: 2px;
+            background: #e2e8f0;
+            z-index: 0;
+        }
+
+        .step-card {
+            flex: 1;
+            text-align: center;
+            z-index: 1;
+            background: white;
+            padding: 1rem;
+        }
+
+        .step-number {
+            width: 80px;
+            height: 80px;
+            background: white;
+            border: 2px solid #e2e8f0;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1.5rem;
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: var(--text-light);
+            transition: var(--transition);
+            position: relative;
+        }
+
+        .step-card:hover .step-number {
+            border-color: var(--primary);
+            color: var(--primary);
+            background: #eff6ff;
+            transform: scale(1.1);
+        }
+
+        .step-card h3 {
+            margin-bottom: 0.8rem;
+            font-size: 1.3rem;
+        }
+
+        .step-card p {
+            color: var(--text-light);
+            font-size: 0.95rem;
+            padding: 0 10px;
+        }
+
+        /* --- BENEFITS --- */
+        .benefits {
+            background: linear-gradient(to bottom, #f8fafc, #eff6ff);
+        }
+
+        .benefits-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .benefit-card {
+            background: white;
+            padding: 2rem;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow-sm);
+            display: flex;
+            align-items: flex-start;
+            gap: 1.5rem;
+            transition: var(--transition);
+        }
+
+        .benefit-card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .benefit-icon {
+            flex-shrink: 0;
+            width: 60px;
+            height: 60px;
+            background: var(--primary-gradient);
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.5rem;
+            box-shadow: 0 8px 16px rgba(37, 99, 235, 0.25);
+        }
+
+        .benefit-content h3 {
+            margin-bottom: 0.5rem;
+        }
+
+        .benefit-content p {
+            color: var(--text-light);
+            line-height: 1.6;
+        }
+
+        /* Mobile Stats */
+        .mobile-only-stats {
+            margin-top: 3rem;
+            display: flex;
+            gap: 2rem;
+            font-size: 0.9rem;
+            color: var(--text-light);
+        }
+
+        .mobile-only-stats div strong {
+            color: var(--dark);
+            font-size: 1.2rem;
+        }
+
+        /* --- FOOTER --- */
+        footer {
+            background-color: var(--dark);
+            color: white;
+            padding: 5rem 1.5rem 2rem;
+            font-size: 0.95rem;
+        }
+
+        .footer-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 1fr;
+            gap: 4rem;
+        }
+
+        .footer-about p {
+            color: #94a3b8;
+            margin: 1.5rem 0;
+            max-width: 300px;
+            line-height: 1.6;
+        }
+
+        .footer-column h3 {
+            color: white;
+            margin-bottom: 1.5rem;
+            font-size: 1.1rem;
+        }
+
+        .footer-column ul {
+            list-style: none;
+        }
+
+        .footer-column li {
+            margin-bottom: 0.8rem;
+        }
+
+        .footer-column a {
+            color: #94a3b8;
+            transition: 0.2s;
+        }
+
+        .footer-column a:hover {
+            color: white;
+            padding-left: 5px;
+        }
+
+        .footer-bottom {
+            max-width: 1200px;
+            margin: 4rem auto 0;
+            padding-top: 2rem;
+            border-top: 1px solid #1e293b;
+            text-align: center;
+            color: #64748b;
+            font-size: 0.85rem;
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        /* Flash Messages */
+        .flash-messages {
+            max-width: 1200px;
+            margin: 1rem auto 0;
+            padding: 0 1.5rem;
+        }
+
+        /* --- RESPONSIVE --- */
+        @media (max-width: 1200px) {
+            .footer-container {
+                grid-template-columns: 1fr 1fr;
+                gap: 3rem;
+            }
+        }
+
+        @media (max-width: 992px) {
+            .hero {
+                grid-template-columns: 1fr;
+                text-align: center;
+                padding-top: 4rem;
+            }
+
+            .hero-content {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .hero h1 { font-size: 3rem; }
+            .hero p { margin-left: auto; margin-right: auto; }
+
+            .hero-visual {
+                display: none;
+            }
+
+            .steps-container {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .steps-container::after {
+                display: none;
+            }
+            
+            .step-card {
+                max-width: 400px;
+                margin-bottom: 2rem;
+            }
+            
+            .footer-container {
+                grid-template-columns: 1fr 1fr;
+                gap: 2rem;
+            }
+
+            .hero-buttons {
+                justify-content: center;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .nav-links, .nav-buttons {
+                display: none;
+                width: 100%;
+            }
+
+            .menu-toggle { 
+                display: block; 
+            }
+            
+            /* Mobile Menu Styling */
+            header.mobile-open .nav-links {
+                display: flex;
+                flex-direction: column;
+                position: absolute;
+                top: 100%;
+                left: 0;
+                right: 0;
+                background: white;
+                padding: 2rem;
+                box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+                border-top: 1px solid #f1f5f9;
+                text-align: center;
+                z-index: 1000;
+            }
+
+            header.mobile-open .nav-buttons {
+                display: flex;
+                flex-direction: column;
+                position: absolute;
+                top: calc(100% + 280px);
+                left: 0;
+                right: 0;
+                background: white;
+                padding: 0 2rem 2rem;
+                border-bottom-left-radius: 1rem;
+                border-bottom-right-radius: 1rem;
+                box-shadow: 0 15px 20px rgba(0,0,0,0.05);
+                z-index: 1000;
+                align-items: center;
+                gap: 1rem;
+            }
+
+            .hero h1 { 
+                font-size: 2.2rem; 
+            }
+            
+            .footer-container {
+                grid-template-columns: 1fr;
+            }
+            
+            .footer-bottom {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .hero-buttons {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .mobile-only-stats {
+                justify-content: center;
+                text-align: center;
+            }
+
+            .section-padding {
+                padding: 4rem 1.5rem;
+            }
+
+            .section-header h2 {
+                font-size: 1.8rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .hero h1 {
+                font-size: 1.8rem;
+            }
+            
+            .hero p {
+                font-size: 1rem;
+            }
+            
+            .category-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .hero-buttons button, 
+            .hero-buttons a {
+                width: 100%;
+            }
+        }
+    </style>
+    
+    {% block extra_css %}{% endblock %}
 </head>
-<body class="bg-gray-50 flex flex-col min-h-screen">
+<body>
 
     <!-- Header -->
-    <nav class="bg-white shadow-md">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between h-16">
-                <div class="flex">
-                    <a href="{{ url_for('index') }}" class="flex-shrink-0 flex items-center">
-                        <span class="text-2xl font-bold text-indigo-600">ClearQ</span>
-                    </a>
-                </div>
-                <div class="flex items-center space-x-4">
-                    <a href="{{ url_for('explore') }}" class="text-gray-700 hover:text-indigo-600">Find Mentors</a>
-                    
-                    {% if current_user.is_authenticated %}
-                        <a href="{{ url_for('dashboard') }}" class="text-gray-700 hover:text-indigo-600">Dashboard</a>
-                        <span class="text-sm text-gray-500">Hello, {{ current_user.username }}</span>
-                        <a href="{{ url_for('logout') }}" class="bg-red-500 text-white px-4 py-2 rounded-md hover:bg-red-600">Logout</a>
-                    {% else %}
-                        <a href="{{ url_for('login') }}" class="text-gray-700 hover:text-indigo-600">Login</a>
-                        <a href="{{ url_for('register') }}" class="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700">Get Started</a>
-                    {% endif %}
-                </div>
+    <header id="mainHeader">
+        <div class="header-container">
+            <a href="{{ url_for('index') }}" class="logo">
+                <i class="fas fa-graduation-cap"></i>
+                Clear<span>Q</span>
+            </a>
+            
+            <div class="menu-toggle" id="menuToggle">
+                <i class="fas fa-bars"></i>
+            </div>
+            
+            <ul class="nav-links" id="navLinks">
+                <li><a href="#engineering">Engineering</a></li>
+                <li><a href="#business">Business</a></li>
+                <li><a href="#how-it-works">How It Works</a></li>
+                <li><a href="#resources">Resources</a></li>
+                <li><a href="{{ url_for('explore') }}">Find Mentors</a></li>
+            </ul>
+            
+            <div class="nav-buttons" id="navButtons">
+                {% if current_user.is_authenticated %}
+                    <a href="{{ url_for('dashboard') }}" class="login-button">Dashboard</a>
+                    <span style="color: var(--text-light); padding: 0.6rem 0; font-weight: 500;">
+                        <i class="fas fa-user-circle"></i> {{ current_user.username }}
+                    </span>
+                    <a href="{{ url_for('logout') }}" class="cta-button" style="padding: 0.6rem 1.2rem;">Logout</a>
+                {% else %}
+                    <a href="{{ url_for('login') }}" class="login-button">Log In</a>
+                    <a href="{{ url_for('register') }}" class="cta-button" style="padding: 0.6rem 1.2rem;">Get Started</a>
+                {% endif %}
             </div>
         </div>
-    </nav>
+    </header>
 
     <!-- Flash Messages -->
     {% with messages = get_flashed_messages() %}
         {% if messages %}
-            <div class="max-w-7xl mx-auto mt-4 px-4">
+            <div class="flash-messages">
                 {% for message in messages %}
-                    <div class="bg-blue-100 border-l-4 border-blue-500 text-blue-700 p-4" role="alert">
-                        <p>{{ message }}</p>
+                    <div class="bg-blue-100 border-l-4 border-blue-500 text-blue-700 p-4 rounded-r-lg mb-2" role="alert">
+                        <div class="flex items-center">
+                            <i class="fas fa-info-circle mr-2"></i>
+                            <p class="font-medium">{{ message }}</p>
+                        </div>
                     </div>
                 {% endfor %}
             </div>
@@ -53,36 +891,180 @@
     </main>
 
     <!-- Footer -->
-    <footer class="bg-gray-800 text-white mt-12">
-        <div class="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-                <div>
-                    <h3 class="text-lg font-semibold mb-4">ClearQ</h3>
-                    <p class="text-gray-400">Democratizing mentorship for everyone. Connect with industry experts today.</p>
+    <footer id="resources">
+        <div class="footer-container">
+            <div class="footer-about">
+                <div class="logo" style="color: white; margin-bottom: 1rem;">
+                    <i class="fas fa-graduation-cap"></i>
+                    Clear<span style="color: #60a5fa;">Q</span>
                 </div>
-                <div>
-                    <h3 class="text-lg font-semibold mb-4">Quick Links</h3>
-                    <ul class="space-y-2">
-                        <li><a href="#" class="text-gray-400 hover:text-white">About Us</a></li>
-                        <li><a href="#" class="text-gray-400 hover:text-white">Become a Mentor</a></li>
-                        <li><a href="#" class="text-gray-400 hover:text-white">Privacy Policy</a></li>
-                    </ul>
-                </div>
-                <div>
-                    <h3 class="text-lg font-semibold mb-4">Contact</h3>
-                    <p class="text-gray-400">support@clearq.in</p>
-                    <div class="flex space-x-4 mt-4">
-                        <i class="fab fa-twitter text-gray-400 hover:text-white cursor-pointer"></i>
-                        <i class="fab fa-linkedin text-gray-400 hover:text-white cursor-pointer"></i>
-                        <i class="fab fa-instagram text-gray-400 hover:text-white cursor-pointer"></i>
-                    </div>
-                </div>
+                <p>Empowering professionals through high-impact, long-term mentorship. Join the community today.</p>
+                <button class="career-program-btn" style="margin-top: 1.5rem; padding: 0.75rem 1.5rem; font-size: 1rem;">
+                    Career Mentorship Program
+                </button>
             </div>
-            <div class="border-t border-gray-700 mt-8 pt-8 text-center text-gray-400">
-                &copy; 2024 ClearQ.in. All rights reserved.
+            
+            <div class="footer-column">
+                <h3>Platform</h3>
+                <ul>
+                    <li><a href="{{ url_for('explore') }}">Browse Mentors</a></li>
+                    <li><a href="#how-it-works">How it Works</a></li>
+                    <li><a href="#">Pricing</a></li>
+                    <li><a href="#">For Business</a></li>
+                </ul>
             </div>
+            
+            <div class="footer-column">
+                <h3>Resources</h3>
+                <ul>
+                    <li><a href="#">Blog</a></li>
+                    <li><a href="#">Success Stories</a></li>
+                    <li><a href="#">Career Guide</a></li>
+                    <li><a href="#">Help Center</a></li>
+                </ul>
+            </div>
+            
+            <div class="footer-column">
+                <h3>Company</h3>
+                <ul>
+                    <li><a href="#">About Us</a></li>
+                    <li><a href="#">Careers</a></li>
+                    <li><a href="#">Privacy Policy</a></li>
+                    <li><a href="#">Terms of Service</a></li>
+                </ul>
+            </div>
+        </div>
+        
+        <div class="footer-bottom">
+            <p>&copy; 2024 ClearQ Education Pvt Ltd. All rights reserved.</p>
+            <p class="mt-2 md:mt-0">Made with <i class="fas fa-heart" style="color: #ef4444;"></i> in Bangalore</p>
         </div>
     </footer>
 
+    <script>
+        // --- MOBILE MENU TOGGLE ---
+        const menuToggle = document.getElementById('menuToggle');
+        const header = document.getElementById('mainHeader');
+        
+        menuToggle.addEventListener('click', () => {
+            header.classList.toggle('mobile-open');
+            
+            const icon = menuToggle.querySelector('i');
+            if (header.classList.contains('mobile-open')) {
+                icon.classList.remove('fa-bars');
+                icon.classList.add('fa-times');
+            } else {
+                icon.classList.remove('fa-times');
+                icon.classList.add('fa-bars');
+            }
+        });
+
+        // --- SMOOTH SCROLL ---
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function(e) {
+                e.preventDefault();
+                header.classList.remove('mobile-open'); // Close menu on click
+                const targetId = this.getAttribute('href');
+                if(targetId && targetId !== '#') {
+                    const target = document.querySelector(targetId);
+                    if(target){
+                        window.scrollTo({
+                            top: target.offsetTop - 80,
+                            behavior: 'smooth'
+                        });
+                    }
+                }
+            });
+        });
+
+        // --- INTERACTION: CAREER PROGRAM BUTTON ---
+        document.querySelectorAll('.career-program-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                // You can redirect to a specific page or open a modal
+                window.location.href = "{{ url_for('career_program') if 'career_program' in url_map else '#' }}";
+            });
+        });
+
+        // --- ANIMATION ON SCROLL (Intersection Observer) ---
+        const revealElements = document.querySelectorAll('.reveal');
+
+        const revealCallback = (entries, observer) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('active');
+                    observer.unobserve(entry.target); // Only animate once
+                }
+            });
+        };
+
+        const revealOptions = {
+            threshold: 0.15,
+            rootMargin: "0px 0px -50px 0px"
+        };
+
+        const revealObserver = new IntersectionObserver(revealCallback, revealOptions);
+        revealElements.forEach(el => revealObserver.observe(el));
+
+        // --- STATS COUNTER ANIMATION ---
+        const stats = document.querySelectorAll('.stat-number');
+        let statsAnimated = false;
+
+        function animateStats() {
+            if(statsAnimated) return;
+            
+            stats.forEach(stat => {
+                const target = +stat.getAttribute('data-target');
+                const duration = 2000; // 2 seconds
+                const increment = target / (duration / 16); // 60fps
+                
+                let current = 0;
+                const updateCount = () => {
+                    current += increment;
+                    if(current < target) {
+                        stat.innerText = Math.ceil(current) + "+";
+                        requestAnimationFrame(updateCount);
+                    } else {
+                        stat.innerText = target + "+";
+                    }
+                };
+                updateCount();
+            });
+            statsAnimated = true;
+        }
+
+        // Trigger stats when Hero is visible
+        const heroSection = document.querySelector('.hero');
+        if(heroSection) {
+            const statsObserver = new IntersectionObserver((entries) => {
+                if(entries[0].isIntersecting) {
+                    animateStats();
+                }
+            });
+            statsObserver.observe(heroSection);
+        }
+
+        // Close mobile menu when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!header.contains(e.target) && header.classList.contains('mobile-open')) {
+                header.classList.remove('mobile-open');
+                const icon = menuToggle.querySelector('i');
+                icon.classList.remove('fa-times');
+                icon.classList.add('fa-bars');
+            }
+        });
+
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            if (window.innerWidth > 768 && header.classList.contains('mobile-open')) {
+                header.classList.remove('mobile-open');
+                const icon = menuToggle.querySelector('i');
+                icon.classList.remove('fa-times');
+                icon.classList.add('fa-bars');
+            }
+        });
+
+    </script>
+    
+    {% block extra_js %}{% endblock %}
 </body>
 </html>
