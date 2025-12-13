@@ -146,16 +146,11 @@ def debug_paths():
         output += "<b style='color:red'>Templates folder NOT found here!</b>"
         
     return output
-@app.route('/mentorship-program')
-def mentorship_program():
-    return render_template('mentorship_program.html')
-    
+
 @app.route('/')
 def index():
     return render_template('index.html')
-@app.route('/enrol')
-def mentorship_program():
-    return render_template('enroll.html')
+
 @app.route('/explore', methods=['GET', 'POST'])
 def explore():
     recommendations = []
@@ -260,7 +255,89 @@ def register():
             return redirect(url_for('login'))
     
     return render_template('register.html')
+@app.route('/enroll', methods=['GET', 'POST'])
+def enroll():
+    """Enrollment page for mentorship program"""
+    if request.method == 'POST':
+        # Handle enrollment form submission
+        full_name = request.form.get('fullName')
+        email = request.form.get('email')
+        phone = request.form.get('phone')
+        education = request.form.get('education')
+        
+        # In a real app, you would:
+        # 1. Save enrollment data to database
+        # 2. Process payment via Stripe/Razorpay
+        # 3. Send confirmation email
+        # 4. Create user account if needed
+        
+        # For demo, just show success message
+        flash('Enrollment successful! Check your email for confirmation.')
+        return redirect(url_for('mentorship_program'))
+    
+    return render_template('enroll.html')
 
+@app.route('/process-enrollment', methods=['POST'])
+def process_enrollment():
+    """API endpoint to process enrollment (for AJAX)"""
+    try:
+        data = request.get_json()
+        
+        # Extract data
+        full_name = data.get('fullName')
+        email = data.get('email')
+        phone = data.get('phone')
+        education = data.get('education')
+        
+        # Validation
+        if not all([full_name, email, phone]):
+            return jsonify({'success': False, 'message': 'All fields are required'}), 400
+        
+        # Create user account if email doesn't exist
+        existing_user = User.query.filter_by(email=email).first()
+        if not existing_user:
+            # Create new user with role='learner' (or 'mentee')
+            user = User(
+                username=email.split('@')[0],  # Use email prefix as username
+                email=email,
+                role='learner'
+            )
+            # Generate a random password or ask user to set later
+            user.set_password('temp123')  # In real app, send password reset link
+            db.session.add(user)
+            db.session.commit()
+            
+            # You might want to create a separate Enrollment model
+            # enrollment = Enrollment(
+            #     user_id=user.id,
+            #     program='career_mentorship',
+            #     status='pending',
+            #     payment_status='completed'
+            # )
+            # db.session.add(enrollment)
+            # db.session.commit()
+        
+        # In production, integrate with payment gateway here
+        # For demo, just return success
+        return jsonify({
+            'success': True,
+            'message': 'Enrollment successful! Check your email for confirmation.'
+        })
+        
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+# Update the mentorship_program route to include navigation
+@app.route('/mentorship-program')
+def mentorship_program():
+    """Main mentorship program landing page"""
+    # You can add dynamic data here if needed
+    stats = {
+        'success_rate': '95%',
+        'students_enrolled': '2000+',
+        'completion_rate': '89%'
+    }
+    return render_template('mentorship_program.html', stats=stats)
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
@@ -348,6 +425,7 @@ with app.app_context():
 
 if __name__ == '__main__':
     app.run(debug=True)
+
 
 
 
