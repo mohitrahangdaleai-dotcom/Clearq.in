@@ -171,31 +171,31 @@ def explore():
 def register():
     if request.method == 'POST':
         role = request.form.get('role')
-        username = request.form.get('username')
-        email = request.form.get('email')
-        password = request.form.get('password')
         
-        if User.query.filter_by(email=email).first():
-            flash('Email already registered')
-            return redirect(url_for('register'))
-
-        user = User(username=username, email=email, role=role)
-        user.set_password(password)
-        
-        if role == 'mentor':
-            user.domain = request.form.get('domain')
-            user.company = request.form.get('company')
-            user.services = request.form.get('services')
-            user.price = request.form.get('price')
-            user.bio = request.form.get('bio')
-            user.is_verified = False # Admin must approve
-        
-        db.session.add(user)
-        db.session.commit()
-        login_user(user)
-        return redirect(url_for('index'))
-        
-    return render_template('register.html')
+        if role == 'learner':
+            # Handle learner registration (existing logic)
+            username = request.form.get('username')
+            email = request.form.get('email')
+            password = request.form.get('password')
+            # ... rest of your learner logic
+            
+        elif role == 'mentor':
+            # Handle mentor registration with new fields
+            username = request.form.get('username')
+            email = request.form.get('email')
+            password = request.form.get('password')
+            full_name = request.form.get('full_name')
+            phone = request.form.get('phone')
+            job_title = request.form.get('job_title')
+            company = request.form.get('company')
+            domain = request.form.get('domain')
+            experience = request.form.get('experience')
+            skills = request.form.get('skills')  # Comma-separated
+            price = request.form.get('price')
+            availability = request.form.get('availability')
+            bio = request.form.get('bio')
+            # Get services as list
+            services = request.form.getlist('services')
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -284,4 +284,5 @@ with app.app_context():
 
 if __name__ == '__main__':
     app.run(debug=True)
+
 
