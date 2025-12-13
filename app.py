@@ -332,7 +332,59 @@ def enroll():
         return redirect(url_for('dashboard') if current_user.is_authenticated else url_for('index'))
     
     return render_template('enroll.html')
+# Add these routes after your existing routes
 
+@app.route('/process-payment/<int:booking_id>', methods=['POST'])
+@login_required
+def process_payment(booking_id):
+    """Process payment for a booking"""
+    booking = Booking.query.get_or_404(booking_id)
+    
+    # Check if current user is the learner
+    if booking.learner_id != current_user.id:
+        return jsonify({'success': False, 'message': 'Unauthorized'}), 403
+    
+    # Update booking status
+    booking.status = 'Paid'
+    db.session.commit()
+    
+    return jsonify({'success': True, 'message': 'Payment processed successfully'})
+
+@app.route('/process-enrollment-payment/<int:enrollment_id>', methods=['POST'])
+@login_required
+def process_enrollment_payment(enrollment_id):
+    """Process payment for enrollment"""
+    enrollment = Enrollment.query.get_or_404(enrollment_id)
+    
+    # Check if current user owns this enrollment
+    if enrollment.user_id != current_user.id:
+        return jsonify({'success': False, 'message': 'Unauthorized'}), 403
+    
+    # Update enrollment payment status
+    enrollment.payment_status = 'completed'
+    db.session.commit()
+    
+    return jsonify({'success': True, 'message': 'Payment completed successfully'})
+
+# Optional: Add edit profile route
+@app.route('/edit-profile', methods=['GET', 'POST'])
+@login_required
+def edit_profile():
+    if request.method == 'POST':
+        # Handle profile updates
+        if current_user.role == 'mentor':
+            current_user.full_name = request.form.get('full_name')
+            current_user.domain = request.form.get('domain')
+            current_user.price = int(request.form.get('price')) if request.form.get('price') else 0
+            current_user.bio = request.form.get('bio')
+            current_user.availability = request.form.get('availability')
+        
+        db.session.commit()
+        flash('Profile updated successfully!')
+        return redirect(url_for('dashboard'))
+    
+    return render_template('edit_profile.html')
+    
 @app.route('/process-enrollment', methods=['POST'])
 def process_enrollment():
     """API endpoint to process enrollment (for AJAX)"""
@@ -615,5 +667,6 @@ with app.app_context():
 
 if __name__ == '__main__':
     app.run(debug=True)
+
 
 
