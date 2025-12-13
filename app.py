@@ -153,7 +153,9 @@ def mentorship_program():
 @app.route('/')
 def index():
     return render_template('index.html')
-
+@app.route('/enrol')
+def mentorship_program():
+    return render_template('enroll.html')
 @app.route('/explore', methods=['GET', 'POST'])
 def explore():
     recommendations = []
@@ -346,6 +348,7 @@ with app.app_context():
 
 if __name__ == '__main__':
     app.run(debug=True)
+
 
 
 
