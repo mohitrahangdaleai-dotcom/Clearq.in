@@ -1493,8 +1493,8 @@
     <header id="header">
         <div class="container">
             <div class="header-content">
-                <a href="#" class="logo">
-                    <i class="fas fa-briefcase"></i>
+                <a href="{{ url_for('index') }}" class="logo">
+                    <i class="fas fa-graduation-cap"></i>
                     <span>ClearQ</span>
                 </a>
                 
@@ -1503,16 +1503,25 @@
                 </button>
                 
                 <ul class="nav-links" id="navLinks">
+                    <li><a href="{{ url_for('index') }}">Home</a></li>
+                    <li><a href="{{ url_for('explore') }}">Find Mentors</a></li>
                     <li><a href="#program">Program</a></li>
                     <li><a href="#benefits">What You'll Get</a></li>
                     <li><a href="#bonuses">Bonuses</a></li>
                     <li><a href="#testimonials">Testimonials</a></li>
                     <li><a href="#faq">FAQ</a></li>
                     <li>
-  <a href="enroll.html" class="btn" style="padding: 12px 25px; margin-top: 10px;">
-    Enroll Now
-  </a>
-</li>
+                        <a href="{{ url_for('enroll') }}" class="btn" style="padding: 12px 25px; margin-top: 10px;">
+                            Enroll Now
+                        </a>
+                    </li>
+                    {% if current_user.is_authenticated %}
+                    <li>
+                        <a href="{{ url_for('dashboard') }}" class="btn" style="padding: 12px 25px; margin-top: 10px; background: #f0f0f0; color: #333;">
+                            Dashboard
+                        </a>
+                    </li>
+                    {% endif %}
                 </ul>
             </div>
         </div>
@@ -1564,7 +1573,8 @@
                                     </div>
                                 </div>
                                 
-                                <a href="enroll.html" class="btn" style="padding: 15px 30px; font-size: 0.95rem;">Enroll Now →</a>
+                                <!-- CHANGED THIS LINE -->
+                                <a href="{{ url_for('enroll') }}" class="btn" style="padding: 15px 30px; font-size: 0.95rem;">Enroll Now →</a>
                             </div>
                         </div>
                         
@@ -1638,7 +1648,8 @@
                         <span class="new-price">₹499</span>
                     </div>
                     
-                    <a href="enroll.html" class="btn">Enroll Now <i class="fas fa-arrow-right"></i></a>
+                    <!-- CHANGED THIS LINE -->
+                    <a href="{{ url_for('enroll') }}" class="btn">Enroll Now <i class="fas fa-arrow-right"></i></a>
                 </div>
             </div>
             
@@ -1962,7 +1973,8 @@
                     <span class="new-price" style="color: #ffd166;">₹499</span>
                 </div>
                 
-                <a href="enroll.html" class="btn" style="background: white; color: var(--primary-color); font-size: 1.2rem; padding: 20px 45px;">
+                <!-- CHANGED THIS LINE -->
+                <a href="{{ url_for('enroll') }}" class="btn" style="background: white; color: var(--primary-color); font-size: 1.2rem; padding: 20px 45px;">
                     Enroll Now <i class="fas fa-arrow-right"></i>
                 </a>
                 
@@ -1977,11 +1989,14 @@
     <footer>
         <div class="container">
             <div class="footer-content">
-                <div class="footer-logo">commonjobs</div>
+                <!-- CHANGED THIS LINE -->
+                <div class="footer-logo">ClearQ</div>
                 
                 <p style="max-width: 600px; margin-bottom: 20px; color: #cbd5e0;">Your ultimate guide to landing your first job with personalized mentorship and real job support.</p>
                 
                 <ul class="footer-links">
+                    <li><a href="{{ url_for('index') }}">Home</a></li>
+                    <li><a href="{{ url_for('explore') }}">Find Mentors</a></li>
                     <li><a href="#program">Program</a></li>
                     <li><a href="#benefits">Benefits</a></li>
                     <li><a href="#bonuses">Bonuses</a></li>
@@ -2000,7 +2015,7 @@
                 </div>
                 
                 <div class="copyright">
-                    &copy; 2023 CommonJobs Career Mentorship. All rights reserved. | support@commonjobs.com
+                    &copy; 2024 ClearQ Career Mentorship. All rights reserved. | support@clearq.in
                 </div>
             </div>
         </div>
