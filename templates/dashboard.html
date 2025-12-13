@@ -51,13 +51,16 @@
                         <td class="px-6 py-4 whitespace-nowrap">₹{{ item.mentor.price }}</td>
                         <td class="px-6 py-4 whitespace-nowrap">
                             {% if item.booking.status == 'Paid' %}
-                            <button onclick="startMeeting('{{ item.booking.id }}', '{{ item.mentor.username }}')" 
-                                    class="text-indigo-600 hover:text-indigo-900 font-medium bg-indigo-50 hover:bg-indigo-100 px-3 py-1 rounded">
+                            <button onclick="window.open('https://meet.google.com/new', '_blank')" 
+                                    class="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700">
                                 Join Meeting
                             </button>
                             {% else %}
-                            <button onclick="showPaymentModal('{{ item.booking.id }}', {{ item.mentor.price }})" 
-                                    class="text-white bg-yellow-600 hover:bg-yellow-700 px-3 py-1 rounded text-sm">
+                            <button onclick="if(confirm('Pay ₹{{ item.mentor.price }}?')) { 
+                                fetch('/process-payment/{{ item.booking.id }}', {method: 'POST'})
+                                .then(() => location.reload());
+                            }" 
+                                    class="px-3 py-1 bg-yellow-600 text-white rounded hover:bg-yellow-700">
                                 Pay ₹{{ item.mentor.price }}
                             </button>
                             {% endif %}
@@ -113,7 +116,10 @@
                     
                     <div class="pt-4 border-t border-gray-100">
                         {% if enrollment.payment_status == 'pending' %}
-                        <button onclick="processEnrollmentPayment('{{ enrollment.id }}', {{ enrollment.payment_amount }})" 
+                        <button onclick="if(confirm('Pay ₹{{ enrollment.payment_amount }}?')) { 
+                            fetch('/process-enrollment-payment/{{ enrollment.id }}', {method: 'POST'})
+                            .then(() => location.reload());
+                        }" 
                                 class="w-full px-4 py-2 bg-yellow-600 text-white rounded-md hover:bg-yellow-700">
                             Complete Payment (₹{{ enrollment.payment_amount }})
                         </button>
@@ -224,16 +230,14 @@
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                             {% if item.booking.status == 'Paid' %}
-                            <button onclick="startMeeting('{{ item.booking.id }}', '{{ item.learner.username if item.learner else "Unknown" }}')" 
-                                    class="text-indigo-600 hover:text-indigo-900 bg-indigo-50 hover:bg-indigo-100 px-3 py-1 rounded">
+                            <button onclick="window.open('https://meet.google.com/new', '_blank')" 
+                                    class="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700">
                                 Start Meeting
                             </button>
                             {% else %}
-                            <button onclick="markAsPaid('{{ item.booking.id }}')" 
-                                    class="text-gray-400 cursor-not-allowed bg-gray-100 px-3 py-1 rounded text-sm"
-                                    title="Waiting for learner payment">
+                            <span class="px-3 py-1 bg-gray-200 text-gray-600 rounded">
                                 Waiting for payment
-                            </button>
+                            </span>
                             {% endif %}
                         </td>
                     </tr>
@@ -279,87 +283,12 @@
                     <p class="font-medium">{{ current_user.availability or 'Not set' }}</p>
                 </div>
             </div>
-            <div class="mt-6">
-                <a href="{{ url_for('edit_profile') if url_for('edit_profile') else '#' }}" 
-                   class="inline-flex items-center px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700">
-                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                    </svg>
-                    Edit Profile
-                </a>
-            </div>
         </div>
     {% endif %}
 </div>
 
-<!-- JavaScript for button functionality -->
 <script>
-// Function to start a meeting (both learner and mentor)
-function startMeeting(bookingId, personName) {
-    // In a real app, this would generate or retrieve a meeting link
-    // For now, show a mock meeting link
-    const meetingLink = `https://meet.google.com/new?booking=${bookingId}`;
-    
-    // Option 1: Open in new tab
-    window.open(meetingLink, '_blank');
-    
-    // Option 2: Show modal with link
-    // showMeetingModal(meetingLink, personName);
-    
-    // Option 3: Copy to clipboard
-    // navigator.clipboard.writeText(meetingLink);
-    // alert(`Meeting link copied to clipboard!`);
-}
-
-// Function to show payment modal for learners
-function showPaymentModal(bookingId, amount) {
-    if (confirm(`Proceed to pay ₹${amount} for this session?`)) {
-        // Simulate payment processing
-        fetch(`/process-payment/${bookingId}`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                alert('Payment successful! Session confirmed.');
-                location.reload(); // Refresh to update status
-            } else {
-                alert('Payment failed: ' + data.message);
-            }
-        })
-        .catch(error => {
-            alert('Payment error. Please try again.');
-        });
-    }
-}
-
-// Function to process enrollment payment
-function processEnrollmentPayment(enrollmentId, amount) {
-    if (confirm(`Complete payment of ₹${amount} for this program?`)) {
-        fetch(`/process-enrollment-payment/${enrollmentId}`, {
-            method: 'POST'
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                alert('Enrollment payment successful!');
-                location.reload();
-            } else {
-                alert('Payment failed: ' + data.message);
-            }
-        });
-    }
-}
-
-// Function for mentor to mark booking as paid (admin function)
-function markAsPaid(bookingId) {
-    // This would typically be called after learner pays
-    // For now, just show a message
-    alert('Waiting for learner to complete payment. You will be notified when payment is received.');
-}
+// Simple alert for testing
+console.log('Dashboard loaded');
 </script>
-
 {% endblock %}
