@@ -146,7 +146,10 @@ def debug_paths():
         output += "<b style='color:red'>Templates folder NOT found here!</b>"
         
     return output
-
+@app.route('/mentorship-program')
+def mentorship_program():
+    return render_template('mentorship_program.html')
+    
 @app.route('/')
 def index():
     return render_template('index.html')
@@ -281,3 +284,4 @@ with app.app_context():
 
 if __name__ == '__main__':
     app.run(debug=True)
+
