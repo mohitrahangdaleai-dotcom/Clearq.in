@@ -4,215 +4,234 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ClearQ - Mentorship Platform</title>
+    
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
+    
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
-        
-        * {
-            font-family: 'Poppins', sans-serif;
+        /* Custom CSS Variables */
+        :root {
+            --primary: #2563eb;
+            --primary-dark: #1d4ed8;
+            --primary-gradient: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%);
+            --secondary: #7c3aed;
+            --dark: #0f172a;
+            --text-body: #334155;
+            --text-light: #64748b;
+            --bg-light: #f8fafc;
+            --white: #ffffff;
+            
+            --border-radius: 16px;
+            --shadow-sm: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+            --shadow-md: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.025);
+            --shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.05), 0 10px 10px -5px rgba(0, 0, 0, 0.02);
+            --shadow-color: rgba(37, 99, 235, 0.2);
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            line-height: 1.6;
+            color: var(--text-body);
+            background-color: var(--bg-light);
+            overflow-x: hidden;
+        }
+
+        h1, h2, h3, h4 {
+            color: var(--dark);
+            font-weight: 700;
+            letter-spacing: -0.025em;
+        }
+
+        /* Animation Classes */
+        .reveal {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: all 0.8s ease-out;
+        }
+        .reveal.active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .float-animation {
+            animation: float 6s ease-in-out infinite;
         }
         
-        .gradient-bg {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        }
-        
-        .gradient-text {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-        
-        .hover-lift {
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-        }
-        
-        .hover-lift:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.2);
-        }
-        
-        .nav-link {
-            position: relative;
-        }
-        
-        .nav-link::after {
-            content: '';
-            position: absolute;
-            width: 0;
-            height: 2px;
-            bottom: -5px;
-            left: 0;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            transition: width 0.3s ease;
-        }
-        
-        .nav-link:hover::after {
-            width: 100%;
-        }
-        
-        .floating {
-            animation: floating 3s ease-in-out infinite;
-        }
-        
-        @keyframes floating {
+        @keyframes float {
             0% { transform: translateY(0px); }
             50% { transform: translateY(-10px); }
             100% { transform: translateY(0px); }
         }
-        
-        .pulse {
-            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+
+        /* Custom Card Styling */
+        .category-card {
+            transition: var(--transition);
         }
         
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.7; }
+        .category-card:hover {
+            transform: translateY(-8px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        /* Hero Background */
+        .hero-bg {
+            background: radial-gradient(circle at 80% 20%, rgba(124, 58, 237, 0.08) 0%, rgba(37, 99, 235, 0.03) 70%, transparent 100%);
+        }
+
+        /* Stats Counter */
+        .stat-number {
+            font-feature-settings: "tnum";
+            font-variant-numeric: tabular-nums;
+        }
+
+        /* Mobile Menu */
+        .mobile-menu {
+            display: none;
         }
         
-        .slide-in {
-            animation: slideIn 0.5s ease-out;
-        }
-        
-        @keyframes slideIn {
-            from {
-                transform: translateY(-20px);
-                opacity: 0;
-            }
-            to {
-                transform: translateY(0);
-                opacity: 1;
-            }
-        }
-        
-        .btn-gradient {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            background-size: 200% auto;
-            transition: all 0.3s ease;
-        }
-        
-        .btn-gradient:hover {
-            background-position: right center;
-            transform: scale(1.05);
-        }
-        
-        .glass-effect {
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-        }
-        
-        .glow {
-            box-shadow: 0 0 20px rgba(102, 126, 234, 0.3);
-        }
-        
-        .typing-effect {
-            overflow: hidden;
-            border-right: 2px solid #667eea;
-            white-space: nowrap;
-            animation: typing 3.5s steps(40, end), blink-caret 0.75s step-end infinite;
-        }
-        
-        @keyframes typing {
-            from { width: 0 }
-            to { width: 100% }
-        }
-        
-        @keyframes blink-caret {
-            from, to { border-color: transparent }
-            50% { border-color: #667eea; }
-        }
-        
-        .fade-in {
-            animation: fadeIn 1s ease-in;
-        }
-        
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
-        
-        .shake {
-            animation: shake 0.5s ease-in-out;
-        }
-        
-        @keyframes shake {
-            0%, 100% { transform: translateX(0); }
-            25% { transform: translateX(-5px); }
-            75% { transform: translateX(5px); }
+        .mobile-menu.active {
+            display: block;
         }
     </style>
+    
+    <!-- Custom Tailwind Configuration -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#2563eb',
+                        'primary-dark': '#1d4ed8',
+                        secondary: '#7c3aed',
+                        dark: '#0f172a',
+                    },
+                    backgroundImage: {
+                        'gradient-primary': 'linear-gradient(135deg, #2563eb 0%, #7c3aed 100%)',
+                    },
+                    animation: {
+                        'float': 'float 6s ease-in-out infinite',
+                    },
+                    keyframes: {
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0px)' },
+                            '50%': { transform: 'translateY(-10px)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
 </head>
-<body class="bg-gradient-to-br from-gray-50 to-blue-50 flex flex-col min-h-screen fade-in">
+<body class="bg-gray-50 flex flex-col min-h-screen">
 
-    <!-- Header with glass effect -->
-    <nav class="sticky top-0 z-50 bg-white/90 backdrop-blur-lg shadow-lg transition-all duration-300">
+    <!-- Modern Header -->
+    <header id="mainHeader" class="bg-white/85 backdrop-blur-xl sticky top-0 z-50 border-b border-gray-100">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between h-16 items-center">
-                <div class="flex items-center">
-                    <a href="{{ url_for('index') }}" class="flex-shrink-0 flex items-center group">
-                        <div class="relative">
-                            <div class="absolute -inset-1 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-lg blur opacity-25 group-hover:opacity-75 transition duration-300"></div>
-                            <span class="relative text-3xl font-bold gradient-text animate_animated animate_fadeInLeft">
-                                <i class="fas fa-graduation-cap mr-2"></i>ClearQ
-                            </span>
-                        </div>
-                    </a>
-                </div>
-                <div class="flex items-center space-x-6">
-                    <a href="{{ url_for('explore') }}" class="nav-link text-gray-700 hover:text-indigo-600 font-medium transition-all duration-300 animate_animated animate_fadeInDown">
-                        <i class="fas fa-search mr-2"></i>Find Mentors
-                    </a>
+            <div class="flex justify-between items-center h-16">
+                <!-- Logo -->
+                <a href="{{ url_for('index') }}" class="flex-shrink-0 flex items-center space-x-2">
+                    <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-secondary flex items-center justify-center">
+                        <i class="fas fa-graduation-cap text-white text-sm"></i>
+                    </div>
+                    <span class="text-xl font-bold text-dark">Clear<span class="text-primary">Q</span></span>
+                </a>
+
+                <!-- Desktop Navigation -->
+                <nav class="hidden md:flex items-center space-x-8">
+                    <a href="{{ url_for('explore') }}" class="text-gray-700 hover:text-primary font-medium transition-colors">Find Mentors</a>
+                    <a href="#how-it-works" class="text-gray-700 hover:text-primary font-medium transition-colors">How It Works</a>
+                    <a href="#categories" class="text-gray-700 hover:text-primary font-medium transition-colors">Categories</a>
                     
                     {% if current_user.is_authenticated %}
-                        <a href="{{ url_for('dashboard') }}" class="nav-link text-gray-700 hover:text-indigo-600 font-medium transition-all duration-300 animate_animated animate_fadeInDown">
-                            <i class="fas fa-tachometer-alt mr-2"></i>Dashboard
-                        </a>
-                        <div class="flex items-center space-x-3 animate_animated animate_fadeInRight">
-                            <div class="relative group">
-                                <div class="w-10 h-10 rounded-full gradient-bg flex items-center justify-center text-white font-bold hover-lift cursor-pointer">
+                        <a href="{{ url_for('dashboard') }}" class="text-gray-700 hover:text-primary font-medium transition-colors">Dashboard</a>
+                        <div class="flex items-center space-x-4">
+                            <div class="flex items-center space-x-2">
+                                <div class="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-white text-sm font-semibold">
                                     {{ current_user.username[0]|upper }}
                                 </div>
-                                <div class="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-xl py-2 z-50 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 transform -translate-y-2 group-hover:translate-y-0">
-                                    <span class="block px-4 py-2 text-sm text-gray-700 border-b">
-                                        <strong>{{ current_user.username }}</strong>
-                                    </span>
-                                    <a href="{{ url_for('dashboard') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600">
-                                        <i class="fas fa-user mr-2"></i>Profile
-                                    </a>
-                                    <a href="{{ url_for('logout') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-red-50 hover:text-red-600">
-                                        <i class="fas fa-sign-out-alt mr-2"></i>Logout
-                                    </a>
-                                </div>
+                                <span class="text-sm text-gray-600">Hi, {{ current_user.username }}</span>
                             </div>
+                            <a href="{{ url_for('logout') }}" 
+                               class="px-4 py-2 rounded-lg bg-gradient-to-r from-red-500 to-red-600 text-white font-medium hover:shadow-lg transition-all">
+                                Logout
+                            </a>
                         </div>
                     {% else %}
-                        <a href="{{ url_for('login') }}" class="nav-link text-gray-700 hover:text-indigo-600 font-medium transition-all duration-300 animate_animated animate_fadeInDown">
-                            <i class="fas fa-sign-in-alt mr-2"></i>Login
-                        </a>
-                        <a href="{{ url_for('register') }}" class="btn-gradient text-white px-6 py-3 rounded-full font-semibold hover-lift shadow-lg animate_animated animatepulse animate_infinite">
-                            <i class="fas fa-rocket mr-2"></i>Get Started
-                        </a>
+                        <div class="flex items-center space-x-4">
+                            <a href="{{ url_for('login') }}" 
+                               class="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 font-medium hover:bg-gray-50 transition-colors">
+                                Log In
+                            </a>
+                            <a href="{{ url_for('register') }}" 
+                               class="px-4 py-2 rounded-lg bg-gradient-to-r from-primary to-secondary text-white font-medium hover:shadow-lg hover:shadow-primary/25 transition-all">
+                                Get Started
+                            </a>
+                        </div>
+                    {% endif %}
+                </nav>
+
+                <!-- Mobile Menu Button -->
+                <button id="mobileMenuButton" class="md:hidden text-gray-700 p-2">
+                    <i class="fas fa-bars text-xl"></i>
+                </button>
+            </div>
+
+            <!-- Mobile Menu -->
+            <div id="mobileMenu" class="mobile-menu md:hidden">
+                <div class="py-4 space-y-3">
+                    <a href="{{ url_for('explore') }}" class="block py-2 text-gray-700 hover:text-primary">Find Mentors</a>
+                    <a href="#how-it-works" class="block py-2 text-gray-700 hover:text-primary">How It Works</a>
+                    <a href="#categories" class="block py-2 text-gray-700 hover:text-primary">Categories</a>
+                    
+                    {% if current_user.is_authenticated %}
+                        <a href="{{ url_for('dashboard') }}" class="block py-2 text-gray-700 hover:text-primary">Dashboard</a>
+                        <div class="pt-4 border-t border-gray-200">
+                            <div class="flex items-center space-x-3 mb-4">
+                                <div class="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-white font-semibold">
+                                    {{ current_user.username[0]|upper }}
+                                </div>
+                                <div>
+                                    <p class="font-medium text-gray-900">{{ current_user.username }}</p>
+                                </div>
+                            </div>
+                            <a href="{{ url_for('logout') }}" 
+                               class="block w-full text-center py-3 rounded-lg bg-gradient-to-r from-red-500 to-red-600 text-white font-medium">
+                                Logout
+                            </a>
+                        </div>
+                    {% else %}
+                        <div class="pt-4 border-t border-gray-200 space-y-3">
+                            <a href="{{ url_for('login') }}" 
+                               class="block w-full text-center py-3 rounded-lg border border-gray-300 text-gray-700 font-medium">
+                                Log In
+                            </a>
+                            <a href="{{ url_for('register') }}" 
+                               class="block w-full text-center py-3 rounded-lg bg-gradient-to-r from-primary to-secondary text-white font-medium">
+                                Get Started
+                            </a>
+                        </div>
                     {% endif %}
                 </div>
             </div>
         </div>
-    </nav>
+    </header>
 
-    <!-- Flash Messages with animation -->
+    <!-- Flash Messages -->
     {% with messages = get_flashed_messages() %}
         {% if messages %}
-            <div class="max-w-7xl mx-auto mt-4 px-4 animate_animated animate_slideInDown">
+            <div class="max-w-7xl mx-auto mt-4 px-4">
                 {% for message in messages %}
-                    <div class="glass-effect border-l-4 border-blue-500 text-blue-700 p-4 rounded-lg shadow-md mb-2 slide-in hover-lift cursor-pointer" role="alert" onclick="this.classList.add('shake')">
+                    <div class="reveal active bg-gradient-to-r from-blue-50 to-blue-100 border-l-4 border-primary text-blue-700 p-4 rounded-lg shadow-sm" role="alert">
                         <div class="flex items-center">
-                            <i class="fas fa-info-circle mr-3 text-xl"></i>
+                            <i class="fas fa-info-circle mr-3"></i>
                             <p class="font-medium">{{ message }}</p>
-                            <button class="ml-auto text-blue-700 hover:text-blue-900" onclick="this.parentElement.parentElement.remove()">
-                                <i class="fas fa-times"></i>
-                            </button>
                         </div>
                     </div>
                 {% endfor %}
@@ -220,471 +239,199 @@
         {% endif %}
     {% endwith %}
 
-    <!-- Main Content -->
+    <!-- Main Content Block -->
     <main class="flex-grow">
-        <!-- Hero Section -->
-        <section class="gradient-bg text-white relative overflow-hidden">
-            <!-- Animated background elements -->
-            <div class="absolute top-0 left-0 w-full h-full overflow-hidden">
-                <div class="absolute top-10 left-10 w-64 h-64 bg-purple-300 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse"></div>
-                <div class="absolute bottom-10 right-10 w-80 h-80 bg-indigo-300 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse" style="animation-delay: 1s;"></div>
-                <div class="absolute top-1/2 left-1/3 w-48 h-48 bg-pink-300 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse" style="animation-delay: 2s;"></div>
-            </div>
-            
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 relative z-10">
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-                    <!-- Left Column - Content -->
-                    <div class="animate_animated animate_fadeInLeft">
-                        <div class="inline-flex items-center px-4 py-2 rounded-full bg-white/20 backdrop-blur-sm mb-6">
-                            <span class="w-2 h-2 bg-green-400 rounded-full mr-2 animate-pulse"></span>
-                            <span class="text-sm font-medium">600+ Expert Mentors Available</span>
-                        </div>
-                        
-                        <h1 class="text-5xl md:text-6xl font-bold mb-6 leading-tight">
-                            Master Your Career with 
-                            <span class="relative">
-                                <span class="gradient-text">ClearQ</span>
-                                <svg class="absolute -bottom-2 left-0 w-full" height="8" viewBox="0 0 200 8" fill="none">
-                                    <path d="M0 4C50 4 150 4 200 4" stroke="url(#paint0_linear)" stroke-width="4" stroke-linecap="round"/>
-                                    <defs>
-                                        <linearGradient id="paint0_linear" x1="0" y1="4" x2="200" y2="4" gradientUnits="userSpaceOnUse">
-                                            <stop stop-color="#667eea"/>
-                                            <stop offset="1" stop-color="#764ba2"/>
-                                        </linearGradient>
-                                    </defs>
-                                </svg>
-                            </span>
-                        </h1>
-                        
-                        <p class="text-xl text-gray-200 mb-8 max-w-2xl">
-                            1-on-1 Mentorship from experts at 
-                            <span class="font-semibold text-white">Google, Amazon, Microsoft</span>, and top startups. 
-                            Don't navigate your career alone. Get matched with top 1% industry experts for long-term guidance, skill mastery, and career growth.
-                        </p>
-                        
-                        <!-- CTA Buttons -->
-                        <div class="flex flex-wrap gap-4 mb-12">
-                            <a href="{{ url_for('explore') }}" class="btn-gradient text-white px-8 py-4 rounded-full text-lg font-semibold hover-lift shadow-xl flex items-center group animate_animated animatepulse animateinfinite animate_slower">
-                                <i class="fas fa-search mr-3"></i>
-                                <span>Find a Mentor</span>
-                                <i class="fas fa-arrow-right ml-3 transform group-hover:translate-x-2 transition-transform duration-300"></i>
-                            </a>
-                            
-                            <a href="#" class="glass-effect text-white px-8 py-4 rounded-full text-lg font-semibold hover-lift shadow-lg flex items-center group">
-                                <i class="fas fa-user-plus mr-3"></i>
-                                <span>Become a Mentor</span>
-                            </a>
-                            
-                            <a href="#" class="border-2 border-white/30 text-white px-6 py-3 rounded-full font-medium hover:bg-white/10 hover-lift transition-all duration-300 flex items-center group">
-                                <i class="fas fa-calendar-check mr-2"></i>
-                                <span>Book Free Trial Session</span>
-                            </a>
-                        </div>
-                        
-                        <!-- Stats Row -->
-                        <div class="grid grid-cols-2 md:grid-cols-4 gap-6 mb-8">
-                            <div class="text-center p-4 rounded-2xl glass-effect hover-lift">
-                                <div class="text-3xl font-bold mb-1 gradient-text">600+</div>
-                                <div class="text-sm text-gray-300">Expert Mentors</div>
-                                <div class="text-xs text-green-400 mt-1">
-                                    <i class="fas fa-check-circle mr-1"></i>Verified
-                                </div>
-                            </div>
-                            
-                            <div class="text-center p-4 rounded-2xl glass-effect hover-lift">
-                                <div class="text-3xl font-bold mb-1 gradient-text">5K+</div>
-                                <div class="text-sm text-gray-300">Careers Transformed</div>
-                            </div>
-                            
-                            <div class="text-center p-4 rounded-2xl glass-effect hover-lift">
-                                <div class="text-3xl font-bold mb-1 gradient-text">4.9/5</div>
-                                <div class="text-sm text-gray-300">Avg. Rating</div>
-                                <div class="flex justify-center mt-1">
-                                    <i class="fas fa-star text-yellow-400 text-xs"></i>
-                                    <i class="fas fa-star text-yellow-400 text-xs"></i>
-                                    <i class="fas fa-star text-yellow-400 text-xs"></i>
-                                    <i class="fas fa-star text-yellow-400 text-xs"></i>
-                                    <i class="fas fa-star text-yellow-400 text-xs"></i>
-                                </div>
-                            </div>
-                            
-                            <div class="text-center p-4 rounded-2xl glass-effect hover-lift">
-                                <div class="text-3xl font-bold mb-1 gradient-text">94%</div>
-                                <div class="text-sm text-gray-300">Success Rate</div>
-                            </div>
-                        </div>
-                        
-                        <!-- Trust badges -->
-                        <div class="flex items-center space-x-4">
-                            <span class="text-sm text-gray-300">Trusted by professionals from</span>
-                            <div class="flex space-x-3">
-                                <div class="w-8 h-8 bg-white/10 rounded-full flex items-center justify-center">
-                                    <i class="fab fa-google text-sm"></i>
-                                </div>
-                                <div class="w-8 h-8 bg-white/10 rounded-full flex items-center justify-center">
-                                    <i class="fab fa-microsoft text-sm"></i>
-                                </div>
-                                <div class="w-8 h-8 bg-white/10 rounded-full flex items-center justify-center">
-                                    <i class="fab fa-amazon text-sm"></i>
-                                </div>
-                                <div class="w-8 h-8 bg-white/10 rounded-full flex items-center justify-center">
-                                    <i class="fab fa-meta text-sm"></i>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Right Column - Visual/Illustration -->
-                    <div class="relative animate_animated animate_fadeInRight">
-                        <div class="relative">
-                            <!-- Main floating card -->
-                            <div class="relative bg-white/10 backdrop-blur-lg rounded-3xl p-8 shadow-2xl hover-lift floating">
-                                <div class="absolute -top-4 -left-4 w-20 h-20 gradient-bg rounded-2xl flex items-center justify-center shadow-lg">
-                                    <i class="fas fa-rocket text-2xl text-white"></i>
-                                </div>
-                                
-                                <div class="ml-24 mb-6">
-                                    <h3 class="text-2xl font-bold text-white mb-2">4x Career Growth</h3>
-                                    <p class="text-gray-300">Average salary increase after mentorship</p>
-                                </div>
-                                
-                                <!-- Progress stats -->
-                                <div class="space-y-6">
-                                    <div>
-                                        <div class="flex justify-between text-sm mb-1">
-                                            <span class="text-gray-300">Career Acceleration</span>
-                                            <span class="text-green-400 font-semibold">94%</span>
-                                        </div>
-                                        <div class="h-2 bg-white/20 rounded-full overflow-hidden">
-                                            <div class="h-full gradient-bg rounded-full" style="width: 94%"></div>
-                                        </div>
-                                    </div>
-                                    
-                                    <div>
-                                        <div class="flex justify-between text-sm mb-1">
-                                            <span class="text-gray-300">Skill Development</span>
-                                            <span class="text-green-400 font-semibold">88%</span>
-                                        </div>
-                                        <div class="h-2 bg-white/20 rounded-full overflow-hidden">
-                                            <div class="h-full gradient-bg rounded-full" style="width: 88%"></div>
-                                        </div>
-                                    </div>
-                                    
-                                    <div>
-                                        <div class="flex justify-between text-sm mb-1">
-                                            <span class="text-gray-300">Job Satisfaction</span>
-                                            <span class="text-green-400 font-semibold">91%</span>
-                                        </div>
-                                        <div class="h-2 bg-white/20 rounded-full overflow-hidden">
-                                            <div class="h-full gradient-bg rounded-full" style="width: 91%"></div>
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                                <!-- Stats inside card -->
-                                <div class="grid grid-cols-3 gap-4 mt-8">
-                                    <div class="text-center">
-                                        <div class="text-2xl font-bold text-white">600+</div>
-                                        <div class="text-xs text-gray-300">Mentors</div>
-                                    </div>
-                                    <div class="text-center">
-                                        <div class="text-2xl font-bold text-white">4x</div>
-                                        <div class="text-xs text-gray-300">Growth</div>
-                                    </div>
-                                    <div class="text-center">
-                                        <div class="text-2xl font-bold text-white">94%</div>
-                                        <div class="text-xs text-gray-300">Success</div>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <!-- Floating elements around the card -->
-                            <div class="absolute -top-6 -right-6 w-16 h-16 bg-yellow-400/20 rounded-2xl flex items-center justify-center backdrop-blur-sm floating" style="animation-delay: 0.5s;">
-                                <i class="fas fa-medal text-yellow-400 text-2xl"></i>
-                            </div>
-                            
-                            <div class="absolute -bottom-4 -left-6 w-20 h-20 bg-green-400/20 rounded-2xl flex items-center justify-center backdrop-blur-sm floating" style="animation-delay: 1s;">
-                                <i class="fas fa-chart-line text-green-400 text-2xl"></i>
-                            </div>
-                            
-                            <!-- Testimonial badge -->
-                            <div class="absolute bottom-10 right-0 glass-effect rounded-2xl p-4 shadow-lg max-w-xs floating" style="animation-delay: 1.5s;">
-                                <div class="flex items-center mb-2">
-                                    <div class="w-10 h-10 rounded-full gradient-bg flex items-center justify-center text-white font-bold mr-3">
-                                        A
-                                    </div>
-                                    <div>
-                                        <div class="font-semibold">Alex Morgan</div>
-                                        <div class="text-xs text-gray-300">Product Manager → Director</div>
-                                    </div>
-                                </div>
-                                <p class="text-sm text-gray-200 italic">
-                                    "My mentor helped me negotiate a 70% salary increase in just 6 months!"
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Scroll indicator -->
-                <div class="absolute bottom-8 left-1/2 transform -translate-x-1/2 animate-bounce">
-                    <a href="#features" class="text-white/70 hover:text-white transition-colors duration-300">
-                        <i class="fas fa-chevron-down text-2xl"></i>
-                    </a>
-                </div>
-            </div>
-            
-            <!-- Animated wave divider -->
-            <div class="absolute bottom-0 left-0 w-full overflow-hidden">
-                <svg class="relative w-full h-20" viewBox="0 0 1200 120" preserveAspectRatio="none">
-                    <path d="M0,0V46.29c47.79,22.2,103.59,32.17,158,28,70.36-5.37,136.33-33.31,206.8-37.5C438.64,32.43,512.34,53.67,583,72.05c69.27,18,138.3,24.88,209.4,13.08,36.15-6,69.85-17.84,104.45-29.34C989.49,25,1113-14.29,1200,52.47V0Z" 
-                          opacity=".25" class="fill-current text-white"></path>
-                    <path d="M0,0V15.81C13,36.92,27.64,56.86,47.69,72.05,99.41,111.27,165,111,224.58,91.58c31.15-10.15,60.09-26.07,89.67-39.8,40.92-19,84.73-46,130.83-49.67,36.26-2.85,70.9,9.42,98.6,31.56,31.77,25.39,62.32,62,103.63,73,40.44,10.79,81.35-6.69,119.13-24.28s75.16-39,116.92-43.05c59.73-5.85,113.28,22.88,168.9,38.84,30.2,8.66,59,6.17,87.09-7.5,22.43-10.89,48-26.93,60.65-49.24V0Z" 
-                          opacity=".5" class="fill-current text-white"></path>
-                    <path d="M0,0V5.63C149.93,59,314.09,71.32,475.83,42.57c43-7.64,84.23-20.12,127.61-26.46,59-8.63,112.48,12.24,165.56,35.4C827.93,77.22,886,95.24,951.2,90c86.53-7,172.46-45.71,248.8-84.81V0Z" 
-                          class="fill-current text-white"></path>
-                </svg>
-            </div>
-        </section>
-
-        <!-- Features Section -->
-        <section id="features" class="py-20 bg-white">
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div class="text-center mb-16">
-                    <h2 class="text-4xl font-bold text-gray-900 mb-4">Why Choose ClearQ?</h2>
-                    <p class="text-xl text-gray-600 max-w-3xl mx-auto">
-                        Experience mentorship that's personalized, impactful, and results-driven.
-                    </p>
-                </div>
-                
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-                    <div class="p-8 rounded-3xl shadow-lg hover-lift bg-gradient-to-br from-blue-50 to-indigo-50 animate_animated animate_fadeInUp">
-                        <div class="w-16 h-16 gradient-bg rounded-2xl flex items-center justify-center mb-6">
-                            <i class="fas fa-user-check text-2xl text-white"></i>
-                        </div>
-                        <h3 class="text-xl font-bold text-gray-900 mb-4">Top 1% Experts</h3>
-                        <p class="text-gray-600">
-                            Get matched with verified industry leaders from top tech companies and startups.
-                        </p>
-                    </div>
-                    
-                    <div class="p-8 rounded-3xl shadow-lg hover-lift bg-gradient-to-br from-purple-50 to-pink-50 animate_animated animate_fadeInUp" style="animation-delay: 0.2s;">
-                        <div class="w-16 h-16 gradient-bg rounded-2xl flex items-center justify-center mb-6">
-                            <i class="fas fa-chart-line text-2xl text-white"></i>
-                        </div>
-                        <h3 class="text-xl font-bold text-gray-900 mb-4">Proven Results</h3>
-                        <p class="text-gray-600">
-                            94% success rate with average 4x career growth for our mentees.
-                        </p>
-                    </div>
-                    
-                    <div class="p-8 rounded-3xl shadow-lg hover-lift bg-gradient-to-br from-green-50 to-teal-50 animate_animated animate_fadeInUp" style="animation-delay: 0.4s;">
-                        <div class="w-16 h-16 gradient-bg rounded-2xl flex items-center justify-center mb-6">
-                            <i class="fas fa-calendar-alt text-2xl text-white"></i>
-                        </div>
-                        <h3 class="text-xl font-bold text-gray-900 mb-4">Flexible Sessions</h3>
-                        <p class="text-gray-600">
-                            Book 1:1 sessions that fit your schedule with our easy-to-use platform.
-                        </p>
-                    </div>
-                </div>
-            </div>
-        </section>
-
         {% block content %}{% endblock %}
     </main>
 
     <!-- Enhanced Footer -->
-    <footer class="bg-gradient-to-r from-gray-900 to-gray-800 text-white mt-12 relative overflow-hidden">
-        <!-- Decorative elements -->
-        <div class="absolute top-0 left-0 w-32 h-32 bg-purple-500 rounded-full -translate-x-16 -translate-y-16 opacity-20 floating"></div>
-        <div class="absolute bottom-0 right-0 w-40 h-40 bg-indigo-500 rounded-full translate-x-20 translate-y-20 opacity-20 floating" style="animation-delay: 1.5s;"></div>
-        
-        <div class="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8 relative z-10">
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
-                <div class="animate_animated animate_fadeInUp">
-                    <div class="flex items-center mb-6">
-                        <div class="w-10 h-10 gradient-bg rounded-lg flex items-center justify-center mr-3 glow">
+    <footer class="bg-dark text-white mt-16">
+        <div class="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+                <!-- Company Info -->
+                <div>
+                    <a href="{{ url_for('index') }}" class="flex items-center space-x-2 mb-6">
+                        <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-primary to-secondary flex items-center justify-center">
                             <i class="fas fa-graduation-cap text-white"></i>
                         </div>
-                        <h3 class="text-2xl font-bold gradient-text">ClearQ</h3>
-                    </div>
-                    <p class="text-gray-400 mb-6">Democratizing mentorship for everyone. Connect with industry experts today.</p>
+                        <span class="text-xl font-bold text-white">Clear<span class="text-primary">Q</span></span>
+                    </a>
+                    <p class="text-gray-400 mb-6 max-w-xs">
+                        Democratizing mentorship for everyone. Connect with industry experts to accelerate your career growth.
+                    </p>
                     <div class="flex space-x-4">
-                        <a href="#" class="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center hover:bg-indigo-600 hover-lift transition-all duration-300">
-                            <i class="fab fa-twitter"></i>
+                        <a href="#" class="w-10 h-10 rounded-full bg-gray-800 hover:bg-gray-700 flex items-center justify-center transition-colors">
+                            <i class="fab fa-twitter text-gray-400 hover:text-white"></i>
                         </a>
-                        <a href="#" class="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center hover:bg-indigo-600 hover-lift transition-all duration-300">
-                            <i class="fab fa-linkedin-in"></i>
+                        <a href="#" class="w-10 h-10 rounded-full bg-gray-800 hover:bg-gray-700 flex items-center justify-center transition-colors">
+                            <i class="fab fa-linkedin-in text-gray-400 hover:text-white"></i>
                         </a>
-                        <a href="#" class="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center hover:bg-indigo-600 hover-lift transition-all duration-300">
-                            <i class="fab fa-instagram"></i>
-                        </a>
-                        <a href="#" class="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center hover:bg-indigo-600 hover-lift transition-all duration-300">
-                            <i class="fab fa-github"></i>
+                        <a href="#" class="w-10 h-10 rounded-full bg-gray-800 hover:bg-gray-700 flex items-center justify-center transition-colors">
+                            <i class="fab fa-instagram text-gray-400 hover:text-white"></i>
                         </a>
                     </div>
                 </div>
-                
-                <div class="animate_animated animate_fadeInUp" style="animation-delay: 0.2s;">
-                    <h3 class="text-lg font-semibold mb-6 flex items-center">
-                        <i class="fas fa-link mr-2 text-indigo-400"></i> Quick Links
-                    </h3>
+
+                <!-- Quick Links -->
+                <div>
+                    <h3 class="text-lg font-semibold mb-6">Quick Links</h3>
                     <ul class="space-y-3">
-                        <li><a href="#" class="text-gray-400 hover:text-white hover:pl-2 transition-all duration-300 flex items-center">
-                            <i class="fas fa-chevron-right text-xs mr-2 text-indigo-400"></i> About Us
-                        </a></li>
-                        <li><a href="#" class="text-gray-400 hover:text-white hover:pl-2 transition-all duration-300 flex items-center">
-                            <i class="fas fa-chevron-right text-xs mr-2 text-indigo-400"></i> Become a Mentor
-                        </a></li>
-                        <li><a href="#" class="text-gray-400 hover:text-white hover:pl-2 transition-all duration-300 flex items-center">
-                            <i class="fas fa-chevron-right text-xs mr-2 text-indigo-400"></i> Privacy Policy
-                        </a></li>
-                        <li><a href="#" class="text-gray-400 hover:text-white hover:pl-2 transition-all duration-300 flex items-center">
-                            <i class="fas fa-chevron-right text-xs mr-2 text-indigo-400"></i> Terms of Service
-                        </a></li>
+                        <li><a href="{{ url_for('explore') }}" class="text-gray-400 hover:text-white transition-colors">Find Mentors</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors">Become a Mentor</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors">Success Stories</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors">Blog</a></li>
                     </ul>
                 </div>
-                
-                <div class="animate_animated animate_fadeInUp" style="animation-delay: 0.4s;">
-                    <h3 class="text-lg font-semibold mb-6 flex items-center">
-                        <i class="fas fa-briefcase mr-2 text-indigo-400"></i> Resources
-                    </h3>
+
+                <!-- Resources -->
+                <div>
+                    <h3 class="text-lg font-semibold mb-6">Resources</h3>
                     <ul class="space-y-3">
-                        <li><a href="#" class="text-gray-400 hover:text-white hover:pl-2 transition-all duration-300 flex items-center">
-                            <i class="fas fa-book mr-2 text-indigo-400"></i> Blog
-                        </a></li>
-                        <li><a href="#" class="text-gray-400 hover:text-white hover:pl-2 transition-all duration-300 flex items-center">
-                            <i class="fas fa-video mr-2 text-indigo-400"></i> Tutorials
-                        </a></li>
-                        <li><a href="#" class="text-gray-400 hover:text-white hover:pl-2 transition-all duration-300 flex items-center">
-                            <i class="fas fa-calendar-alt mr-2 text-indigo-400"></i> Events
-                        </a></li>
-                        <li><a href="#" class="text-gray-400 hover:text-white hover:pl-2 transition-all duration-300 flex items-center">
-                            <i class="fas fa-question-circle mr-2 text-indigo-400"></i> FAQ
-                        </a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors">Career Guides</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors">Interview Prep</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors">Skill Assessments</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors">FAQ</a></li>
                     </ul>
                 </div>
-                
-                <div class="animate_animated animate_fadeInUp" style="animation-delay: 0.6s;">
-                    <h3 class="text-lg font-semibold mb-6 flex items-center">
-                        <i class="fas fa-envelope mr-2 text-indigo-400"></i> Contact Us
-                    </h3>
-                    <div class="space-y-4">
-                        <div class="flex items-start">
-                            <i class="fas fa-envelope text-indigo-400 mt-1 mr-3"></i>
-                            <div>
-                                <p class="text-gray-400">Email us at</p>
-                                <a href="mailto:support@clearq.in" class="text-white hover:text-indigo-400 transition-colors duration-300">support@clearq.in</a>
-                            </div>
-                        </div>
-                        <div class="flex items-start">
-                            <i class="fas fa-phone text-indigo-400 mt-1 mr-3"></i>
-                            <div>
-                                <p class="text-gray-400">Call us at</p>
-                                <p class="text-white">+1 (555) 123-4567</p>
-                            </div>
-                        </div>
-                        <div class="mt-6">
-                            <p class="text-gray-400 mb-3">Subscribe to our newsletter</p>
-                            <div class="flex">
-                                <input type="email" placeholder="Your email" class="flex-grow px-4 py-2 rounded-l-lg bg-gray-800 text-white border-0 focus:ring-2 focus:ring-indigo-500 focus:outline-none">
-                                <button class="gradient-bg px-4 py-2 rounded-r-lg hover-lift">
-                                    <i class="fas fa-paper-plane"></i>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
+
+                <!-- Contact & Legal -->
+                <div>
+                    <h3 class="text-lg font-semibold mb-6">Contact & Legal</h3>
+                    <ul class="space-y-3">
+                        <li><a href="mailto:support@clearq.in" class="text-gray-400 hover:text-white transition-colors">support@clearq.in</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors">Privacy Policy</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors">Terms of Service</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors">Cookie Policy</a></li>
+                    </ul>
                 </div>
             </div>
-            
-            <div class="border-t border-gray-700 mt-8 pt-8 text-center text-gray-400 animate_animated animate_fadeIn">
+
+            <!-- Copyright -->
+            <div class="border-t border-gray-800 mt-8 pt-8 text-center text-gray-500 text-sm">
                 <div class="flex flex-col md:flex-row justify-between items-center">
-                    <p class="mb-4 md:mb-0">
-                        &copy; 2024 ClearQ.in. All rights reserved.
-                    </p>
-                    <div class="flex space-x-6">
-                        <a href="#" class="text-gray-400 hover:text-white transition-colors duration-300">Privacy</a>
-                        <a href="#" class="text-gray-400 hover:text-white transition-colors duration-300">Terms</a>
-                        <a href="#" class="text-gray-400 hover:text-white transition-colors duration-300">Cookies</a>
-                        <a href="#" class="text-gray-400 hover:text-white transition-colors duration-300">Sitemap</a>
-                    </div>
-                </div>
-                <div class="mt-4 text-sm">
-                    <span class="pulse inline-block">🚀</span> Empowering the next generation of professionals
+                    <p>&copy; 2024 ClearQ.in. All rights reserved.</p>
+                    <p class="mt-2 md:mt-0">Made with <i class="fas fa-heart text-red-500 mx-1"></i> for the community</p>
                 </div>
             </div>
         </div>
     </footer>
 
+    <!-- JavaScript -->
     <script>
-        // Add some interactive animations
-        document.addEventListener('DOMContentLoaded', function() {
-            // Animate elements on scroll
-            const observerOptions = {
-                threshold: 0.1,
-                rootMargin: '0px 0px -50px 0px'
+        // Mobile Menu Toggle
+        const mobileMenuButton = document.getElementById('mobileMenuButton');
+        const mobileMenu = document.getElementById('mobileMenu');
+        const menuIcon = mobileMenuButton.querySelector('i');
+
+        mobileMenuButton.addEventListener('click', () => {
+            mobileMenu.classList.toggle('active');
+            if (mobileMenu.classList.contains('active')) {
+                menuIcon.classList.remove('fa-bars');
+                menuIcon.classList.add('fa-times');
+            } else {
+                menuIcon.classList.remove('fa-times');
+                menuIcon.classList.add('fa-bars');
+            }
+        });
+
+        // Close mobile menu when clicking outside
+        document.addEventListener('click', (event) => {
+            if (!mobileMenu.contains(event.target) && !mobileMenuButton.contains(event.target)) {
+                mobileMenu.classList.remove('active');
+                menuIcon.classList.remove('fa-times');
+                menuIcon.classList.add('fa-bars');
+            }
+        });
+
+        // Scroll animations
+        const revealElements = document.querySelectorAll('.reveal');
+        
+        const revealOnScroll = () => {
+            revealElements.forEach(element => {
+                const elementTop = element.getBoundingClientRect().top;
+                const windowHeight = window.innerHeight;
+                
+                if (elementTop < windowHeight - 100) {
+                    element.classList.add('active');
+                }
+            });
+        };
+
+        // Initial check
+        revealOnScroll();
+        
+        // Check on scroll
+        window.addEventListener('scroll', revealOnScroll);
+
+        // Stats counter animation (for homepage)
+        const stats = document.querySelectorAll('.stat-number');
+        
+        if (stats.length > 0) {
+            const animateCounter = (element, target) => {
+                let current = 0;
+                const increment = target / 100;
+                const timer = setInterval(() => {
+                    current += increment;
+                    if (current >= target) {
+                        element.textContent = target + '+';
+                        clearInterval(timer);
+                    } else {
+                        element.textContent = Math.floor(current) + '+';
+                    }
+                }, 20);
             };
-            
+
+            // Animate stats when in viewport
             const observer = new IntersectionObserver((entries) => {
                 entries.forEach(entry => {
                     if (entry.isIntersecting) {
-                        entry.target.classList.add('animate_animated', 'animate_fadeInUp');
+                        const target = parseInt(entry.target.getAttribute('data-target'));
+                        animateCounter(entry.target, target);
+                        observer.unobserve(entry.target);
                     }
                 });
-            }, observerOptions);
-            
-            // Observe all elements with data-animate attribute
-            document.querySelectorAll('[data-animate]').forEach(el => {
-                observer.observe(el);
+            }, { threshold: 0.5 });
+
+            stats.forEach(stat => {
+                observer.observe(stat);
             });
-            
-            // Add hover effect to buttons
-            document.querySelectorAll('.btn-gradient').forEach(button => {
-                button.addEventListener('mouseenter', function() {
-                    this.style.transform = 'scale(1.05)';
-                });
-                button.addEventListener('mouseleave', function() {
-                    this.style.transform = 'scale(1)';
-                });
+        }
+
+        // Smooth scroll for anchor links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function(e) {
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target && this.getAttribute('href') !== '#') {
+                    e.preventDefault();
+                    window.scrollTo({
+                        top: target.offsetTop - 80,
+                        behavior: 'smooth'
+                    });
+                }
             });
+        });
+
+        // Add active class to nav links based on scroll position
+        const sections = document.querySelectorAll('section[id]');
+        
+        window.addEventListener('scroll', () => {
+            const scrollY = window.pageYOffset;
             
-            // Animate flash messages removal
-            document.querySelectorAll('[role="alert"]').forEach(alert => {
-                setTimeout(() => {
-                    alert.style.opacity = '0';
-                    alert.style.transform = 'translateY(-10px)';
-                    setTimeout(() => {
-                        if (alert.parentNode) {
-                            alert.parentNode.removeChild(alert);
-                        }
-                    }, 300);
-                }, 5000);
+            sections.forEach(section => {
+                const sectionHeight = section.offsetHeight;
+                const sectionTop = section.offsetTop - 100;
+                const sectionId = section.getAttribute('id');
+                const navLink = document.querySelector(`a[href="#${sectionId}"]`);
+                
+                if (scrollY > sectionTop && scrollY <= sectionTop + sectionHeight) {
+                    navLink?.classList.add('text-primary', 'font-semibold');
+                } else {
+                    navLink?.classList.remove('text-primary', 'font-semibold');
+                }
             });
-            
-            // Smooth scroll for anchor links
-            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-                anchor.addEventListener('click', function (e) {
-                    const targetId = this.getAttribute('href');
-                    if (targetId === '#') return;
-                    
-                    const targetElement = document.querySelector(targetId);
-                    if (targetElement) {
-                        e.preventDefault();
-                        window.scrollTo({
-                            top: targetElement.offsetTop - 80,
-                            behavior: 'smooth'
-                        });
-                    }
-                });
-            });
-            
-            // Add typing effect to hero title
-            const heroTitle = document.querySelector('.gradient-text');
-            if (heroTitle) {
-                heroTitle.classList.add('typing-effect');
-            }
         });
     </script>
+    
+    {% block scripts %}{% endblock %}
 </body>
 </html>
