@@ -127,6 +127,7 @@ def get_ai_recommendations(user_goal):
     except Exception as e:
         print(f"AI Error: {e}")
         return []
+
 @app.template_filter('escapejs')
 def escapejs_filter(value):
     """Escape strings for JavaScript - similar to Django's escapejs"""
@@ -148,14 +149,134 @@ def escapejs_filter(value):
     for find, replace in replacements.items():
         value = value.replace(find, replace)
     
-    return value        
+    return value
+
 @app.template_filter('from_json')
 def from_json_filter(value):
     """Parse JSON string in templates"""
+    if not value:
+        return {}
     try:
         return json.loads(value)
     except:
         return {}
+
+# --- DEBUG ROUTES ---
+@app.route('/check-data')
+def check_data():
+    """Check what data exists in database"""
+    mentors = User.query.filter_by(role='mentor').all()
+    verified_mentors = User.query.filter_by(role='mentor', is_verified=True).all()
+    
+    result = f"""
+    <h2>Database Status</h2>
+    <p>Total mentors: {len(mentors)}</p>
+    <p>Verified mentors: {len(verified_mentors)}</p>
+    <p>Total users: {User.query.count()}</p>
+    <hr>
+    """
+    
+    if mentors:
+        result += "<h3>All Mentors:</h3>"
+        for mentor in mentors:
+            result += f"""
+            <div style='border:1px solid #ccc; padding:10px; margin:10px;'>
+                <strong>{mentor.username}</strong><br>
+                Email: {mentor.email}<br>
+                Verified: {mentor.is_verified}<br>
+                Domain: {mentor.domain or 'Not set'}<br>
+                Company: {mentor.company or 'Not set'}<br>
+                Created: {mentor.created_at}
+            </div>
+            """
+    else:
+        result += "<p>No mentors found. You need to register as a mentor first.</p>"
+        
+    return result
+
+@app.route('/add-sample-mentors')
+def add_sample_mentors():
+    """Add sample mentors for testing"""
+    
+    sample_mentors = [
+        {
+            'username': 'john_doe',
+            'email': 'john@example.com',
+            'password': 'test123',
+            'full_name': 'John Doe',
+            'domain': 'Data Science',
+            'company': 'Google',
+            'job_title': 'Senior Data Scientist',
+            'experience': '5 years',
+            'skills': 'Python, Machine Learning, SQL, TensorFlow',
+            'services': 'Resume Review, Mock Interview, Career Guidance',
+            'bio': 'I help aspiring data scientists land their dream jobs at FAANG companies. With 5+ years at Google, I know exactly what hiring managers look for.',
+            'price': 1500,
+            'availability': 'Weekdays 6-9 PM',
+            'is_verified': True
+        },
+        {
+            'username': 'jane_smith',
+            'email': 'jane@example.com',
+            'password': 'test123',
+            'full_name': 'Jane Smith',
+            'domain': 'Product Management',
+            'company': 'Microsoft',
+            'job_title': 'Product Manager',
+            'experience': '7 years',
+            'skills': 'Product Strategy, Agile, User Research, Roadmapping',
+            'services': 'Mock Interview, Product Case Studies, Career Transition',
+            'bio': 'Ex-Microsoft PM with 7+ years experience. I specialize in helping engineers transition to product management roles.',
+            'price': 2000,
+            'availability': 'Weekends 10 AM - 6 PM',
+            'is_verified': True
+        },
+        {
+            'username': 'alex_wong',
+            'email': 'alex@example.com',
+            'password': 'test123',
+            'full_name': 'Alex Wong',
+            'domain': 'Software Engineering',
+            'company': 'Amazon',
+            'job_title': 'Senior SDE',
+            'experience': '8 years',
+            'skills': 'Java, System Design, AWS, Distributed Systems',
+            'services': 'Coding Interview Prep, System Design, Resume Review',
+            'bio': 'Senior SDE at Amazon with expertise in large-scale distributed systems. I help engineers crack coding interviews at top tech companies.',
+            'price': 1800,
+            'availability': 'Mon-Fri 7-10 PM',
+            'is_verified': True
+        }
+    ]
+    
+    added_count = 0
+    for data in sample_mentors:
+        # Check if mentor already exists
+        if not User.query.filter_by(email=data['email']).first():
+            mentor = User(
+                username=data['username'],
+                email=data['email'],
+                role='mentor',
+                full_name=data['full_name'],
+                domain=data['domain'],
+                company=data['company'],
+                job_title=data['job_title'],
+                experience=data['experience'],
+                skills=data['skills'],
+                services=data['services'],
+                bio=data['bio'],
+                price=data['price'],
+                availability=data['availability'],
+                is_verified=data['is_verified']
+            )
+            mentor.set_password(data['password'])
+            db.session.add(mentor)
+            added_count += 1
+    
+    db.session.commit()
+    
+    return f"Added {added_count} sample mentors! <a href='/explore'>Go to Explore</a>"
+
 # --- ROUTES ---
 
 @app.route('/')
@@ -167,13 +288,37 @@ def explore():
     recommendations = []
     query = ""
     
+    # Debug logging
+    print("=== EXPLORE ROUTE ===")
+    
     if request.method == 'POST':
         query = request.form.get('goal')
-        recommendations = get_ai_recommendations(query)
-        
+        print(f"Search query: {query}")
+        if query:
+            try:
+                recommendations = get_ai_recommendations(query)
+                print(f"AI found {len(recommendations)} recommendations")
+            except Exception as e:
+                print(f"AI error: {e}")
+                # Fallback: simple text matching
+                mentors = User.query.filter_by(role='mentor', is_verified=True).all()
+                for mentor in mentors:
+                    mentor_text = f"{mentor.domain or ''} {mentor.bio or ''} {mentor.skills or ''}".lower()
+                    if query.lower() in mentor_text:
+                        recommendations.append(mentor)
+    
     # Get all verified mentors
     all_mentors = User.query.filter_by(role='mentor', is_verified=True).all()
-    return render_template('mentors.html', mentors=all_mentors, recommendations=recommendations, query=query)
+    
+    # Debug logging
+    print(f"Total verified mentors: {len(all_mentors)}")
+    for mentor in all_mentors:
+        print(f"  - {mentor.username}: {mentor.domain}")
+    
+    return render_template('mentors.html', 
+                         mentors=all_mentors, 
+                         recommendations=recommendations, 
+                         query=query)
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
@@ -332,7 +477,6 @@ def enroll():
         return redirect(url_for('dashboard') if current_user.is_authenticated else url_for('index'))
     
     return render_template('enroll.html')
-# Add these routes after your existing routes
 
 @app.route('/process-payment/<int:booking_id>', methods=['POST'])
 @login_required
@@ -667,6 +811,3 @@ with app.app_context():
 
 if __name__ == '__main__':
     app.run(debug=True)
-
-
-
