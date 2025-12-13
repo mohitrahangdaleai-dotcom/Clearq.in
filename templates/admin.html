@@ -181,7 +181,7 @@
                                 Approve
                             </a>
                             
-                            <button onclick="showRejectModal({{ mentor.id }}, '{{ mentor.username|escapejs }}')"
+                            <button onclick="showRejectModal({{ mentor.id }}, '{{ mentor.username }}')"
                                class="flex-1 lg:flex-none px-6 py-3 bg-gradient-to-r from-red-500 to-red-600 text-white font-semibold rounded-xl hover:shadow-lg transition-all transform hover:-translate-y-1 flex items-center justify-center gap-2">
                                 <i class="fas fa-times"></i>
                                 Reject
@@ -375,3 +375,4 @@ document.addEventListener('keydown', function(e) {
 }
 </style>
 {% endblock %}
+
