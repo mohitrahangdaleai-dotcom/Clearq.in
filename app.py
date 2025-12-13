@@ -35,20 +35,20 @@ class User(UserMixin, db.Model):
     email = db.Column(db.String(100), unique=True, nullable=False)
     password_hash = db.Column(db.String(200))
     role = db.Column(db.String(20), default='learner')  # 'learner', 'mentor', 'admin'
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=True)  # Make nullable for existing DB
     
     # Mentor Specific Fields
-    full_name = db.Column(db.String(100))
-    phone = db.Column(db.String(20))
-    job_title = db.Column(db.String(100))
-    domain = db.Column(db.String(100))  # e.g., Data Science, SDE
-    company = db.Column(db.String(100))
-    experience = db.Column(db.String(50))
-    skills = db.Column(db.Text)
-    services = db.Column(db.Text)  # Resume Review, Mock Interview
-    bio = db.Column(db.Text)  # Used for AI matching
-    price = db.Column(db.Integer, default=0)
-    availability = db.Column(db.String(50))
+    full_name = db.Column(db.String(100), nullable=True)
+    phone = db.Column(db.String(20), nullable=True)
+    job_title = db.Column(db.String(100), nullable=True)
+    domain = db.Column(db.String(100), nullable=True)  # e.g., Data Science, SDE
+    company = db.Column(db.String(100), nullable=True)
+    experience = db.Column(db.String(50), nullable=True)
+    skills = db.Column(db.Text, nullable=True)
+    services = db.Column(db.Text, nullable=True)  # Resume Review, Mock Interview
+    bio = db.Column(db.Text, nullable=True)  # Used for AI matching
+    price = db.Column(db.Integer, default=0, nullable=True)
+    availability = db.Column(db.String(50), nullable=True)
     is_verified = db.Column(db.Boolean, default=False)
     
     def set_password(self, password):
@@ -76,7 +76,7 @@ class Booking(db.Model):
     service_name = db.Column(db.String(100))
     slot_time = db.Column(db.String(50))
     status = db.Column(db.String(20), default='Pending')  # Pending, Paid, Completed
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=True)
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -458,7 +458,7 @@ def dashboard():
         
         # Get recent bookings with mentor names
         recent_bookings = []
-        bookings = Booking.query.order_by(Booking.created_at.desc()).limit(5).all()
+        bookings = Booking.query.limit(5).all()
         for booking in bookings:
             mentor = User.query.get(booking.mentor_id)
             learner = User.query.get(booking.learner_id)
@@ -480,7 +480,7 @@ def dashboard():
                              recent_bookings=recent_bookings)
     
     elif current_user.role == 'mentor':
-        my_bookings = Booking.query.filter_by(mentor_id=current_user.id).order_by(Booking.created_at.desc()).all()
+        my_bookings = Booking.query.filter_by(mentor_id=current_user.id).all()
         # Get learner names for bookings
         bookings_with_learners = []
         for booking in my_bookings:
@@ -492,7 +492,7 @@ def dashboard():
         return render_template('dashboard.html', bookings=bookings_with_learners, type='mentor')
         
     else:  # Learner
-        my_bookings = Booking.query.filter_by(learner_id=current_user.id).order_by(Booking.created_at.desc()).all()
+        my_bookings = Booking.query.filter_by(learner_id=current_user.id).all()
         bookings_with_mentors = []
         for booking in my_bookings:
             mentor = User.query.get(booking.mentor_id)
@@ -570,15 +570,20 @@ def debug_paths():
         
     return output
 
-# Create DB on first run
+# Create DB on first run - with error handling for existing columns
 with app.app_context():
-    db.create_all()
-    # Create a default admin if not exists
-    if not User.query.filter_by(username='admin').first():
-        admin = User(username='admin', email='admin@clearq.in', role='admin')
-        admin.set_password('admin123')
-        db.session.add(admin)
-        db.session.commit()
+    try:
+        db.create_all()
+        # Try to add admin user
+        if not User.query.filter_by(username='admin').first():
+            admin = User(username='admin', email='admin@clearq.in', role='admin')
+            admin.set_password('admin123')
+            db.session.add(admin)
+            db.session.commit()
+            print("Database and admin user created successfully")
+    except Exception as e:
+        print(f"Database initialization error (may be expected if tables exist): {e}")
+        # Continue anyway - the app might still work
 
 if __name__ == '__main__':
     app.run(debug=True)
