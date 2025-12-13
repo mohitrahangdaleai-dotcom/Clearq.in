@@ -1,27 +1,23 @@
 import os
-from flask import Flask, render_template, request, redirect, url_for, flash
+import json
+import random
+from datetime import datetime
+from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import linear_kernel
-import pandas as pd
 
 # --- FORCE FLASK TO FIND TEMPLATES ---
-# 1. Get the folder where THIS file (app.py) is located
 basedir = os.path.abspath(os.path.dirname(__file__))
-
-# 2. Tell Flask specifically where the 'templates' folder is
 template_dir = os.path.join(basedir, 'templates')
-
-# 3. Initialize Flask with this explicit path
 app = Flask(__name__, template_folder=template_dir)
 # -------------------------------------
 
 app.config['SECRET_KEY'] = 'clearq-secret-key-change-this-in-prod'
 
 # Database Configuration
-# Use SQLite for local dev, but allow switching to Postgres for hosting
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL') or \
     'sqlite:///' + os.path.join(basedir, 'clearq.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
@@ -32,7 +28,35 @@ login_manager.init_app(app)
 login_manager.login_view = 'login'
 
 # --- MODELS ---
-# Add this model to track enrollments
+
+class User(UserMixin, db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(100), unique=True, nullable=False)
+    email = db.Column(db.String(100), unique=True, nullable=False)
+    password_hash = db.Column(db.String(200))
+    role = db.Column(db.String(20), default='learner')  # 'learner', 'mentor', 'admin'
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # Mentor Specific Fields
+    full_name = db.Column(db.String(100))
+    phone = db.Column(db.String(20))
+    job_title = db.Column(db.String(100))
+    domain = db.Column(db.String(100))  # e.g., Data Science, SDE
+    company = db.Column(db.String(100))
+    experience = db.Column(db.String(50))
+    skills = db.Column(db.Text)
+    services = db.Column(db.Text)  # Resume Review, Mock Interview
+    bio = db.Column(db.Text)  # Used for AI matching
+    price = db.Column(db.Integer, default=0)
+    availability = db.Column(db.String(50))
+    is_verified = db.Column(db.Boolean, default=False)
+    
+    def set_password(self, password):
+        self.password_hash = generate_password_hash(password)
+        
+    def check_password(self, password):
+        return check_password_hash(self.password_hash, password)
+
 class Enrollment(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
@@ -44,27 +68,6 @@ class Enrollment(db.Model):
     additional_data = db.Column(db.Text)  # Store form data as JSON
     
     user = db.relationship('User', backref='enrollments')
-    
-class User(UserMixin, db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(100), unique=True, nullable=False)
-    email = db.Column(db.String(100), unique=True, nullable=False)
-    password_hash = db.Column(db.String(200))
-    role = db.Column(db.String(20), default='learner') # 'learner', 'mentor', 'admin'
-    
-    # Mentor Specific Fields
-    domain = db.Column(db.String(100)) # e.g., Data Science, SDE
-    company = db.Column(db.String(100))
-    services = db.Column(db.String(500)) # Resume Review, Mock Interview
-    bio = db.Column(db.Text) # Used for AI matching
-    price = db.Column(db.Integer)
-    is_verified = db.Column(db.Boolean, default=False)
-    
-    def set_password(self, password):
-        self.password_hash = generate_password_hash(password)
-        
-    def check_password(self, password):
-        return check_password_hash(self.password_hash, password)
 
 class Booking(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -72,7 +75,8 @@ class Booking(db.Model):
     learner_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     service_name = db.Column(db.String(100))
     slot_time = db.Column(db.String(50))
-    status = db.Column(db.String(20), default='Pending') # Pending, Paid, Completed
+    status = db.Column(db.String(20), default='Pending')  # Pending, Paid, Completed
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -92,7 +96,7 @@ def get_ai_recommendations(user_goal):
         mentor_data = []
         for m in mentors:
             # Combine relevant fields into a single 'content' string
-            content = f"{m.domain} {m.company} {m.services} {m.bio}"
+            content = f"{m.domain} {m.company} {m.services} {m.bio} {m.skills}"
             mentor_data.append({'id': m.id, 'content': content, 'obj': m})
 
         if not mentor_data:
@@ -107,7 +111,6 @@ def get_ai_recommendations(user_goal):
         tfidf_matrix = tfidf.fit_transform(corpus)
 
         # Calculate Cosine Similarity
-        # The last item in matrix is the user_goal. Compare it with all others.
         cosine_sim = linear_kernel(tfidf_matrix[-1], tfidf_matrix[:-1])
         
         # Get similarity scores
@@ -117,7 +120,7 @@ def get_ai_recommendations(user_goal):
         # Return top 3 matched mentor objects
         recommended_mentors = []
         for i, score in scores[:3]:
-            if score > 0.1: # Threshold to filter completely irrelevant matches
+            if score > 0.1:  # Threshold to filter completely irrelevant matches
                 recommended_mentors.append(mentor_data[i]['obj'])
                 
         return recommended_mentors
@@ -126,38 +129,6 @@ def get_ai_recommendations(user_goal):
         return []
 
 # --- ROUTES ---
-
-# DEBUG ROUTE: Helps diagnose file path issues on Render
-@app.route('/debug')
-def debug_paths():
-    output = "<h2>Current Directory Files:</h2>"
-    
-    # Get the current working directory
-    cwd = os.getcwd()
-    output += f"<b>Current Folder:</b> {cwd}<br><br>"
-    
-    # List files in current folder
-    try:
-        files = os.listdir(cwd)
-        output += "<br>".join(files)
-    except Exception as e:
-        output += f"Error listing files: {e}"
-
-    # Check specifically for templates
-    # We use the variable 'template_dir' we defined at the top
-    output += f"<br><br><h2>Looking for templates at: {template_dir}</h2>"
-    
-    if os.path.exists(template_dir):
-        output += "<b>Found templates folder! Contents:</b><br>"
-        try:
-            tpl_files = os.listdir(template_dir)
-            output += "<br>".join(tpl_files)
-        except Exception as e:
-            output += f"Error reading templates folder: {e}"
-    else:
-        output += "<b style='color:red'>Templates folder NOT found here!</b>"
-        
-    return output
 
 @app.route('/')
 def index():
@@ -222,10 +193,11 @@ def register():
             company = request.form.get('company')
             domain = request.form.get('domain')
             experience = request.form.get('experience')
-            skills = request.form.get('skills')  # Comma-separated
+            skills = request.form.get('skills') or ''
             price = request.form.get('price')
             availability = request.form.get('availability')
             bio = request.form.get('bio')
+            
             # Get services as list and convert to string
             services_list = request.form.getlist('services')
             services = ', '.join(services_list) if services_list else ""
@@ -244,7 +216,6 @@ def register():
                 return render_template('register.html')
             
             # Create new mentor (unverified by default)
-            # Note: Using full_name as username if full_name is provided and username is not
             if not username and full_name:
                 username = full_name.lower().replace(' ', '_')
             
@@ -252,12 +223,18 @@ def register():
                 username=username, 
                 email=email, 
                 role='mentor',
-                domain=domain,
+                full_name=full_name,
+                phone=phone,
+                job_title=job_title,
                 company=company,
+                domain=domain,
+                experience=experience,
+                skills=skills,
                 services=services,
                 bio=bio,
                 price=int(price) if price else 0,
-                is_verified=False  # Needs admin approval
+                availability=availability,
+                is_verified=False
             )
             user.set_password(password)
             db.session.add(user)
@@ -267,6 +244,7 @@ def register():
             return redirect(url_for('login'))
     
     return render_template('register.html')
+
 @app.route('/enroll', methods=['GET', 'POST'])
 def enroll():
     """Enrollment page for mentorship program"""
@@ -287,9 +265,16 @@ def enroll():
                 user_id = user.id
             else:
                 # Create a temporary user record
-                # In production, you might want to create a full account
+                username = email.split('@')[0]
+                # Ensure username is unique
+                counter = 1
+                original_username = username
+                while User.query.filter_by(username=username).first():
+                    username = f"{original_username}_{counter}"
+                    counter += 1
+                
                 user = User(
-                    username=email.split('@')[0],
+                    username=username,
                     email=email,
                     role='learner'
                 )
@@ -308,15 +293,12 @@ def enroll():
         enrollment = Enrollment(
             user_id=user_id,
             program_name='career_mentorship',
-            payment_status='pending',  # In production, update after payment confirmation
+            payment_status='pending',
             payment_amount=499,
             additional_data=json.dumps(enrollment_data)
         )
         db.session.add(enrollment)
         db.session.commit()
-        
-        # In production: Integrate with payment gateway
-        # For demo, just show success
         
         flash('Enrollment submitted successfully! Our team will contact you shortly.')
         return redirect(url_for('dashboard') if current_user.is_authenticated else url_for('index'))
@@ -342,29 +324,44 @@ def process_enrollment():
         # Create user account if email doesn't exist
         existing_user = User.query.filter_by(email=email).first()
         if not existing_user:
-            # Create new user with role='learner' (or 'mentee')
+            # Create new user
+            username = email.split('@')[0]
+            # Ensure username is unique
+            counter = 1
+            original_username = username
+            while User.query.filter_by(username=username).first():
+                username = f"{original_username}_{counter}"
+                counter += 1
+            
             user = User(
-                username=email.split('@')[0],  # Use email prefix as username
+                username=username,
                 email=email,
                 role='learner'
             )
-            # Generate a random password or ask user to set later
-            user.set_password('temp123')  # In real app, send password reset link
+            user.set_password('temp123')
             db.session.add(user)
             db.session.commit()
-            
-            # You might want to create a separate Enrollment model
-            # enrollment = Enrollment(
-            #     user_id=user.id,
-            #     program='career_mentorship',
-            #     status='pending',
-            #     payment_status='completed'
-            # )
-            # db.session.add(enrollment)
-            # db.session.commit()
+            user_id = user.id
+        else:
+            user_id = existing_user.id
         
-        # In production, integrate with payment gateway here
-        # For demo, just return success
+        # Save enrollment
+        enrollment_data = {
+            'full_name': full_name,
+            'phone': phone,
+            'education': education
+        }
+        
+        enrollment = Enrollment(
+            user_id=user_id,
+            program_name='career_mentorship',
+            payment_status='pending',
+            payment_amount=499,
+            additional_data=json.dumps(enrollment_data)
+        )
+        db.session.add(enrollment)
+        db.session.commit()
+        
         return jsonify({
             'success': True,
             'message': 'Enrollment successful! Check your email for confirmation.'
@@ -373,17 +370,16 @@ def process_enrollment():
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)}), 500
 
-# Update the mentorship_program route to include navigation
 @app.route('/mentorship-program')
 def mentorship_program():
     """Main mentorship program landing page"""
-    # You can add dynamic data here if needed
     stats = {
         'success_rate': '95%',
         'students_enrolled': '2000+',
         'completion_rate': '89%'
     }
     return render_template('mentorship_program.html', stats=stats)
+
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
@@ -393,6 +389,7 @@ def login():
         
         if user and user.check_password(password):
             login_user(user)
+            flash('Login successful!')
             return redirect(url_for('index'))
         flash('Invalid credentials')
     return render_template('login.html')
@@ -401,13 +398,18 @@ def login():
 @login_required
 def logout():
     logout_user()
+    flash('You have been logged out.')
     return redirect(url_for('index'))
 
 @app.route('/mentor/<int:id>', methods=['GET', 'POST'])
 def mentor_detail(id):
     mentor = User.query.get_or_404(id)
-    # Basic slots logic (Hardcoded for demo, normally would be dynamic)
-    slots = ["10:00 AM", "2:00 PM", "5:00 PM"]
+    if mentor.role != 'mentor':
+        flash('User is not a mentor')
+        return redirect(url_for('explore'))
+    
+    # Basic slots logic
+    slots = ["10:00 AM", "11:00 AM", "2:00 PM", "3:00 PM", "5:00 PM", "6:00 PM"]
     
     # Remove slots that are already booked for this mentor
     booked_slots = [b.slot_time for b in Booking.query.filter_by(mentor_id=id).all()]
@@ -415,49 +417,158 @@ def mentor_detail(id):
 
     if request.method == 'POST':
         if not current_user.is_authenticated:
+            flash('Please login to book a session')
             return redirect(url_for('login'))
             
         service = request.form.get('service')
         slot = request.form.get('slot')
         
-        # Payment Gateway Mock
-        # In real life, redirect to Stripe/Razorpay here
-        booking = Booking(mentor_id=id, learner_id=current_user.id, service_name=service, slot_time=slot, status='Paid')
+        # Check if slot is still available
+        if slot not in available_slots:
+            flash('Selected slot is no longer available')
+            return redirect(url_for('mentor_detail', id=id))
+        
+        # Create booking
+        booking = Booking(
+            mentor_id=id, 
+            learner_id=current_user.id, 
+            service_name=service, 
+            slot_time=slot, 
+            status='Paid'
+        )
         db.session.add(booking)
         db.session.commit()
+        
         flash('Booking Confirmed! Payment Successful.')
         return redirect(url_for('dashboard'))
 
-    return render_template('mentor_detail.html', mentor=mentor, slots=available_slots)
+    # Parse services
+    services = [s.strip() for s in mentor.services.split(',')] if mentor.services else []
+    
+    return render_template('mentor_detail.html', mentor=mentor, slots=available_slots, services=services)
 
 @app.route('/dashboard')
 @login_required
 def dashboard():
     if current_user.role == 'admin':
         pending_mentors = User.query.filter_by(role='mentor', is_verified=False).all()
-        return render_template('admin.html', pending_mentors=pending_mentors)
+        total_users = User.query.count()
+        verified_mentors = User.query.filter_by(role='mentor', is_verified=True).count()
+        total_bookings = Booking.query.count()
+        
+        # Get recent bookings with mentor names
+        recent_bookings = []
+        bookings = Booking.query.order_by(Booking.created_at.desc()).limit(5).all()
+        for booking in bookings:
+            mentor = User.query.get(booking.mentor_id)
+            learner = User.query.get(booking.learner_id)
+            recent_bookings.append({
+                'mentor_name': mentor.username if mentor else 'Unknown',
+                'learner_name': learner.username if learner else 'Unknown',
+                'service_name': booking.service_name,
+                'slot_time': booking.slot_time,
+                'amount': mentor.price if mentor else 0,
+                'status': booking.status,
+                'created_at': booking.created_at.strftime('%b %d, %Y') if booking.created_at else 'N/A'
+            })
+        
+        return render_template('admin.html', 
+                             pending_mentors=pending_mentors,
+                             total_users=total_users,
+                             verified_mentors=verified_mentors,
+                             total_bookings=total_bookings,
+                             recent_bookings=recent_bookings)
     
     elif current_user.role == 'mentor':
-        my_bookings = Booking.query.filter_by(mentor_id=current_user.id).all()
-        return render_template('dashboard.html', bookings=my_bookings, type='mentor')
+        my_bookings = Booking.query.filter_by(mentor_id=current_user.id).order_by(Booking.created_at.desc()).all()
+        # Get learner names for bookings
+        bookings_with_learners = []
+        for booking in my_bookings:
+            learner = User.query.get(booking.learner_id)
+            bookings_with_learners.append({
+                'booking': booking,
+                'learner': learner
+            })
+        return render_template('dashboard.html', bookings=bookings_with_learners, type='mentor')
         
-    else: # Learner
-        my_bookings = Booking.query.filter_by(learner_id=current_user.id).all()
-        mentors_booked = []
-        for b in my_bookings:
-            mentors_booked.append({'booking': b, 'mentor': User.query.get(b.mentor_id)})
-        return render_template('dashboard.html', data=mentors_booked, type='learner')
+    else:  # Learner
+        my_bookings = Booking.query.filter_by(learner_id=current_user.id).order_by(Booking.created_at.desc()).all()
+        bookings_with_mentors = []
+        for booking in my_bookings:
+            mentor = User.query.get(booking.mentor_id)
+            bookings_with_mentors.append({
+                'booking': booking,
+                'mentor': mentor
+            })
+        return render_template('dashboard.html', bookings=bookings_with_mentors, type='learner')
 
 @app.route('/verify/<int:id>')
 @login_required
 def verify_mentor(id):
     if current_user.role != 'admin':
-        return "Unauthorized", 403
+        flash('Unauthorized access')
+        return redirect(url_for('dashboard'))
+    
     mentor = User.query.get(id)
+    if not mentor:
+        flash('Mentor not found')
+        return redirect(url_for('dashboard'))
+    
+    if mentor.role != 'mentor':
+        flash('User is not a mentor')
+        return redirect(url_for('dashboard'))
+    
     mentor.is_verified = True
     db.session.commit()
-    flash(f'{mentor.username} verified!')
+    flash(f'{mentor.username} has been verified!')
     return redirect(url_for('dashboard'))
+
+@app.route('/reject-mentor/<int:id>', methods=['POST'])
+@login_required
+def reject_mentor(id):
+    if current_user.role != 'admin':
+        return jsonify({'success': False, 'message': 'Unauthorized'}), 403
+    
+    mentor = User.query.get(id)
+    if not mentor:
+        return jsonify({'success': False, 'message': 'Mentor not found'}), 404
+    
+    if mentor.role != 'mentor':
+        return jsonify({'success': False, 'message': 'User is not a mentor'}), 400
+    
+    # Delete the mentor application (or mark as rejected)
+    db.session.delete(mentor)
+    db.session.commit()
+    
+    return jsonify({'success': True, 'message': 'Mentor application rejected'})
+
+# DEBUG ROUTE
+@app.route('/debug')
+def debug_paths():
+    output = "<h2>Current Directory Files:</h2>"
+    
+    cwd = os.getcwd()
+    output += f"<b>Current Folder:</b> {cwd}<br><br>"
+    
+    try:
+        files = os.listdir(cwd)
+        output += "<br>".join(files)
+    except Exception as e:
+        output += f"Error listing files: {e}"
+
+    output += f"<br><br><h2>Looking for templates at: {template_dir}</h2>"
+    
+    if os.path.exists(template_dir):
+        output += "<b>Found templates folder! Contents:</b><br>"
+        try:
+            tpl_files = os.listdir(template_dir)
+            output += "<br>".join(tpl_files)
+        except Exception as e:
+            output += f"Error reading templates folder: {e}"
+    else:
+        output += "<b style='color:red'>Templates folder NOT found here!</b>"
+        
+    return output
 
 # Create DB on first run
 with app.app_context():
@@ -471,9 +582,3 @@ with app.app_context():
 
 if __name__ == '__main__':
     app.run(debug=True)
-
-
-
-
-
-
