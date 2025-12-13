@@ -173,17 +173,40 @@ def register():
         role = request.form.get('role')
         
         if role == 'learner':
-            # Handle learner registration (existing logic)
+            # Handle learner registration
             username = request.form.get('username')
             email = request.form.get('email')
             password = request.form.get('password')
-            # ... rest of your learner logic
+            confirm_password = request.form.get('confirm_password')
+            
+            # Check if passwords match
+            if password != confirm_password:
+                flash('Passwords do not match!')
+                return render_template('register.html')
+            
+            # Check if user exists
+            if User.query.filter_by(email=email).first():
+                flash('Email already registered')
+                return render_template('register.html')
+            if User.query.filter_by(username=username).first():
+                flash('Username already taken')
+                return render_template('register.html')
+            
+            # Create new learner
+            user = User(username=username, email=email, role='learner')
+            user.set_password(password)
+            db.session.add(user)
+            db.session.commit()
+            
+            flash('Registration successful! Please login.')
+            return redirect(url_for('login'))
             
         elif role == 'mentor':
             # Handle mentor registration with new fields
             username = request.form.get('username')
             email = request.form.get('email')
             password = request.form.get('password')
+            confirm_password = request.form.get('confirm_password')
             full_name = request.form.get('full_name')
             phone = request.form.get('phone')
             job_title = request.form.get('job_title')
@@ -194,8 +217,47 @@ def register():
             price = request.form.get('price')
             availability = request.form.get('availability')
             bio = request.form.get('bio')
-            # Get services as list
-            services = request.form.getlist('services')
+            # Get services as list and convert to string
+            services_list = request.form.getlist('services')
+            services = ', '.join(services_list) if services_list else ""
+            
+            # Check if passwords match
+            if password != confirm_password:
+                flash('Passwords do not match!')
+                return render_template('register.html')
+            
+            # Check if user exists
+            if User.query.filter_by(email=email).first():
+                flash('Email already registered')
+                return render_template('register.html')
+            if User.query.filter_by(username=username).first():
+                flash('Username already taken')
+                return render_template('register.html')
+            
+            # Create new mentor (unverified by default)
+            # Note: Using full_name as username if full_name is provided and username is not
+            if not username and full_name:
+                username = full_name.lower().replace(' ', '_')
+            
+            user = User(
+                username=username, 
+                email=email, 
+                role='mentor',
+                domain=domain,
+                company=company,
+                services=services,
+                bio=bio,
+                price=int(price) if price else 0,
+                is_verified=False  # Needs admin approval
+            )
+            user.set_password(password)
+            db.session.add(user)
+            db.session.commit()
+            
+            flash('Mentor application submitted! Please wait for admin approval.')
+            return redirect(url_for('login'))
+    
+    return render_template('register.html')
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -284,5 +346,6 @@ with app.app_context():
 
 if __name__ == '__main__':
     app.run(debug=True)
+
 
 
