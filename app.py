@@ -127,7 +127,28 @@ def get_ai_recommendations(user_goal):
     except Exception as e:
         print(f"AI Error: {e}")
         return []
-        
+@app.template_filter('escapejs')
+def escapejs_filter(value):
+    """Escape strings for JavaScript - similar to Django's escapejs"""
+    if value is None:
+        return ''
+    
+    # Basic escaping for JavaScript strings
+    value = str(value)
+    replacements = {
+        '\\': '\\\\',
+        '"': '\\"',
+        "'": "\\'",
+        '\n': '\\n',
+        '\r': '\\r',
+        '\t': '\\t',
+        '</': '<\\/',
+    }
+    
+    for find, replace in replacements.items():
+        value = value.replace(find, replace)
+    
+    return value        
 @app.template_filter('from_json')
 def from_json_filter(value):
     """Parse JSON string in templates"""
@@ -594,4 +615,5 @@ with app.app_context():
 
 if __name__ == '__main__':
     app.run(debug=True)
+
 
