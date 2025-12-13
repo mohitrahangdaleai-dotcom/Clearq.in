@@ -32,7 +32,19 @@ login_manager.init_app(app)
 login_manager.login_view = 'login'
 
 # --- MODELS ---
-
+# Add this model to track enrollments
+class Enrollment(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    program_name = db.Column(db.String(100), default='career_mentorship')
+    enrollment_date = db.Column(db.DateTime, default=datetime.utcnow)
+    payment_status = db.Column(db.String(20), default='pending')  # pending, completed, failed
+    payment_amount = db.Column(db.Integer, default=499)
+    status = db.Column(db.String(20), default='active')  # active, completed, cancelled
+    additional_data = db.Column(db.Text)  # Store form data as JSON
+    
+    user = db.relationship('User', backref='enrollments')
+    
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(100), unique=True, nullable=False)
@@ -265,15 +277,49 @@ def enroll():
         phone = request.form.get('phone')
         education = request.form.get('education')
         
-        # In a real app, you would:
-        # 1. Save enrollment data to database
-        # 2. Process payment via Stripe/Razorpay
-        # 3. Send confirmation email
-        # 4. Create user account if needed
+        # Check if user is logged in
+        if current_user.is_authenticated:
+            user_id = current_user.id
+        else:
+            # Check if user exists with this email
+            user = User.query.filter_by(email=email).first()
+            if user:
+                user_id = user.id
+            else:
+                # Create a temporary user record
+                # In production, you might want to create a full account
+                user = User(
+                    username=email.split('@')[0],
+                    email=email,
+                    role='learner'
+                )
+                user.set_password('temp_' + str(random.randint(1000, 9999)))
+                db.session.add(user)
+                db.session.commit()
+                user_id = user.id
         
-        # For demo, just show success message
-        flash('Enrollment successful! Check your email for confirmation.')
-        return redirect(url_for('mentorship_program'))
+        # Save enrollment record
+        enrollment_data = {
+            'full_name': full_name,
+            'phone': phone,
+            'education': education
+        }
+        
+        enrollment = Enrollment(
+            user_id=user_id,
+            program_name='career_mentorship',
+            payment_status='pending',  # In production, update after payment confirmation
+            payment_amount=499,
+            additional_data=json.dumps(enrollment_data)
+        )
+        db.session.add(enrollment)
+        db.session.commit()
+        
+        # In production: Integrate with payment gateway
+        # For demo, just show success
+        
+        flash('Enrollment submitted successfully! Our team will contact you shortly.')
+        return redirect(url_for('dashboard') if current_user.is_authenticated else url_for('index'))
     
     return render_template('enroll.html')
 
@@ -425,6 +471,7 @@ with app.app_context():
 
 if __name__ == '__main__':
     app.run(debug=True)
+
 
 
 
