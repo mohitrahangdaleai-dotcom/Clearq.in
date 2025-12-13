@@ -23,14 +23,18 @@
                                 <div>
                                     <h1 class="text-3xl font-bold text-gray-900">{{ mentor.full_name or mentor.username }}</h1>
                                     <div class="flex items-center gap-4 mt-2">
+                                        {% if mentor.company %}
                                         <p class="text-lg text-gray-600 flex items-center gap-2">
                                             <i class="fas fa-building"></i>
                                             {{ mentor.company }}
                                         </p>
+                                        {% endif %}
+                                        {% if mentor.job_title %}
                                         <p class="text-lg text-gray-600 flex items-center gap-2">
                                             <i class="fas fa-briefcase"></i>
                                             {{ mentor.job_title }}
                                         </p>
+                                        {% endif %}
                                     </div>
                                 </div>
                                 
@@ -43,9 +47,11 @@
                                     </span>
                                     {% endif %}
                                     
+                                    {% if mentor.domain %}
                                     <span class="px-4 py-2 bg-gradient-to-r from-primary/10 to-secondary/10 text-primary rounded-full font-semibold">
                                         {{ mentor.domain }}
                                     </span>
+                                    {% endif %}
                                 </div>
                             </div>
                             
@@ -63,10 +69,12 @@
                                     <p class="text-2xl font-bold text-gray-900">94%</p>
                                     <p class="text-sm text-gray-600">Success Rate</p>
                                 </div>
+                                {% if mentor.experience %}
                                 <div class="text-center">
                                     <p class="text-2xl font-bold text-gray-900">{{ mentor.experience }}</p>
                                     <p class="text-sm text-gray-600">Experience</p>
                                 </div>
+                                {% endif %}
                             </div>
                         </div>
                     </div>
@@ -85,7 +93,7 @@
                         </div>
                         About Mentor
                     </h2>
-                    <p class="text-gray-700 leading-relaxed text-lg">{{ mentor.bio }}</p>
+                    <p class="text-gray-700 leading-relaxed text-lg">{{ mentor.bio or 'No bio available' }}</p>
                     
                     {% if mentor.skills %}
                     <div class="mt-8">
@@ -93,7 +101,7 @@
                         <div class="flex flex-wrap gap-3">
                             {% for skill in mentor.skills.split(',') %}
                             <span class="px-4 py-2 bg-gradient-to-r from-primary/10 to-secondary/10 text-primary rounded-full font-medium">
-                                {{ skill }}
+                                {{ skill.strip() }}
                             </span>
                             {% endfor %}
                         </div>
@@ -110,6 +118,7 @@
                         Services Offered
                     </h2>
                     
+                    {% if mentor.services %}
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         {% for service in mentor.services.split(',') %}
                         <div class="p-6 border border-gray-200 rounded-xl hover:border-primary transition-colors group">
@@ -117,7 +126,7 @@
                                 <div class="w-12 h-12 rounded-lg bg-blue-100 flex items-center justify-center group-hover:scale-110 transition-transform">
                                     <i class="fas fa-{{ 'comments' if 'Interview' in service else 'file-alt' if 'Resume' in service else 'chart-line' if 'Career' in service else 'brain' }} text-blue-600"></i>
                                 </div>
-                                <h3 class="text-lg font-semibold text-gray-900">{{ service }}</h3>
+                                <h3 class="text-lg font-semibold text-gray-900">{{ service.strip() }}</h3>
                             </div>
                             <p class="text-gray-600 text-sm">
                                 {% if 'Interview' in service %}
@@ -133,6 +142,9 @@
                         </div>
                         {% endfor %}
                     </div>
+                    {% else %}
+                    <p class="text-gray-500 text-center py-8">No services listed</p>
+                    {% endif %}
                 </div>
 
                 <!-- Reviews Section -->
@@ -197,16 +209,17 @@
                     
                     <form method="POST" class="space-y-6">
                         <!-- Service Selection -->
+                        {% if mentor.services %}
                         <div>
                             <label class="block text-sm font-semibold text-gray-700 mb-3">Select Service</label>
                             <div class="space-y-3">
                                 {% for service in mentor.services.split(',') %}
                                 <label class="flex items-center gap-4 p-4 border border-gray-200 rounded-xl cursor-pointer hover:border-primary transition-colors">
-                                    <input type="radio" name="service" value="{{ service }}" 
+                                    <input type="radio" name="service" value="{{ service.strip() }}" 
                                            class="w-5 h-5 text-primary focus:ring-primary" 
                                            {% if loop.first %}checked{% endif %}>
                                     <div class="flex-1">
-                                        <p class="font-medium text-gray-900">{{ service }}</p>
+                                        <p class="font-medium text-gray-900">{{ service.strip() }}</p>
                                         <p class="text-sm text-gray-600">
                                             {% if 'Interview' in service %}
                                             60 min session
@@ -221,6 +234,11 @@
                                 {% endfor %}
                             </div>
                         </div>
+                        {% else %}
+                        <div class="p-4 bg-yellow-50 border border-yellow-200 rounded-xl">
+                            <p class="text-yellow-800">No services available for booking</p>
+                        </div>
+                        {% endif %}
 
                         <!-- Time Slots -->
                         <div>
@@ -251,7 +269,7 @@
                         <div class="pt-6 border-t border-gray-200">
                             <div class="flex justify-between items-center mb-4">
                                 <span class="text-gray-600">Session Fee</span>
-                                <span class="text-2xl font-bold text-primary">₹{{ mentor.price }}</span>
+                                <span class="text-2xl font-bold text-primary">₹{{ mentor.price or 0 }}</span>
                             </div>
                             
                             <div class="flex items-center gap-2 text-sm text-gray-600 mb-6">
@@ -276,11 +294,11 @@
                             </div>
 
                             <!-- Book Button -->
-                            {% if slots %}
+                            {% if slots and mentor.services %}
                             <button type="submit" 
                                     class="w-full py-4 bg-gradient-to-r from-primary to-secondary text-white font-bold rounded-xl hover:shadow-xl transition-all transform hover:-translate-y-1 flex items-center justify-center gap-3">
                                 <i class="fas fa-lock"></i>
-                                Book Now for ₹{{ mentor.price }}
+                                Book Now for ₹{{ mentor.price or 0 }}
                             </button>
                             
                             <p class="text-center text-xs text-gray-500 mt-3">
@@ -290,14 +308,16 @@
                             <button disabled 
                                     class="w-full py-4 bg-gray-300 text-gray-500 font-bold rounded-xl cursor-not-allowed flex items-center justify-center gap-3">
                                 <i class="fas fa-calendar-times"></i>
-                                No Available Slots
+                                {% if not mentor.services %}No Services{% else %}No Available Slots{% endif %}
                             </button>
                             
+                            {% if slots %}
                             <button type="button" 
                                     onclick="requestAvailability()"
                                     class="w-full mt-3 py-3 border-2 border-primary text-primary font-semibold rounded-xl hover:bg-primary hover:text-white transition-colors">
                                 Request Different Time
                             </button>
+                            {% endif %}
                             {% endif %}
                         </div>
                     </form>
@@ -313,7 +333,7 @@
                         </div>
                         <div class="flex items-center justify-between">
                             <span>Availability</span>
-                            <span class="font-bold">15 hours/week</span>
+                            <span class="font-bold">{{ mentor.availability or 'Flexible' }}</span>
                         </div>
                         <div class="flex items-center justify-between">
                             <span>Session Completion</span>
@@ -353,20 +373,29 @@ document.querySelector('form').addEventListener('submit', function(e) {
     e.preventDefault();
     
     // Get form data
-    const service = document.querySelector('input[name="service"]:checked').value;
-    const slot = document.querySelector('input[name="slot"]:checked').value;
+    const serviceInput = document.querySelector('input[name="service"]:checked');
+    const slotInput = document.querySelector('input[name="slot"]:checked');
+    
+    if (!serviceInput || !slotInput) {
+        alert('Please select both a service and a time slot');
+        return;
+    }
+    
+    const service = serviceInput.value;
+    const slot = slotInput.value;
     
     // Show loading state
     const submitBtn = this.querySelector('button[type="submit"]');
+    if (submitBtn.disabled) return;
+    
     const originalText = submitBtn.innerHTML;
     submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
     submitBtn.disabled = true;
     
-    // Simulate payment processing
+    // Submit the form
     setTimeout(() => {
-        // Submit the form
         this.submit();
-    }, 2000);
+    }, 1000);
 });
 </script>
 
