@@ -127,7 +127,14 @@ def get_ai_recommendations(user_goal):
     except Exception as e:
         print(f"AI Error: {e}")
         return []
-
+        
+@app.template_filter('from_json')
+def from_json_filter(value):
+    """Parse JSON string in templates"""
+    try:
+        return json.loads(value)
+    except:
+        return {}
 # --- ROUTES ---
 
 @app.route('/')
@@ -587,3 +594,4 @@ with app.app_context():
 
 if __name__ == '__main__':
     app.run(debug=True)
+
