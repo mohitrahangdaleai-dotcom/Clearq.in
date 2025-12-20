@@ -162,6 +162,20 @@ def from_json_filter(value):
         return {}
 
 # --- DEBUG ROUTES ---
+
+@app.route('/mentor/profile/<int:id>')
+def mentor_public_profile(id):
+    """Public profile page for mentors (like LinkedIn)"""
+    mentor = User.query.get_or_404(id)
+    if mentor.role != 'mentor':
+        flash('User is not a mentor')
+        return redirect(url_for('explore'))
+    
+    # Get mentor's bookings count for stats
+    total_bookings = Booking.query.filter_by(mentor_id=id).count()
+    
+    return render_template('mentor_public_profile.html', mentor=mentor, total_bookings=total_bookings)
+    
 @app.route('/check-data')
 def check_data():
     """Check what data exists in database"""
@@ -811,3 +825,4 @@ with app.app_context():
 
 if __name__ == '__main__':
     app.run(debug=True)
+
