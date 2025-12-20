@@ -240,69 +240,68 @@
                         </div>
                         {% endif %}
 
-                        <!-- Time Slots -->
                         <!-- Date Selection -->
-<div class="mb-6">
-    <label class="block text-sm font-semibold text-gray-700 mb-3">Select Date</label>
-    <input type="date" 
-           name="booking_date" 
-           id="booking_date"
-           required 
-           min="{{ today }}"
-           class="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent">
-</div>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-3">Select Date</label>
+                            <input type="date" 
+                                   name="booking_date" 
+                                   id="booking_date"
+                                   required 
+                                   min="{{ today }}"
+                                   class="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent">
+                        </div>
 
-<!-- Time Selection -->
-<div>
-    <label class="block text-sm font-semibold text-gray-700 mb-3">Select Time Slot</label>
-    <div class="grid grid-cols-2 gap-3">
-        {% set time_slots = ["09:00", "10:00", "11:00", "12:00", "14:00", "15:00", "16:00", "17:00"] %}
-        {% for slot in time_slots %}
-        <label class="cursor-pointer">
-            <input type="radio" 
-                   name="booking_time" 
-                   value="{{ slot }}" 
-                   required 
-                   class="peer sr-only"
-                   {% if slot not in available_slots %}disabled{% endif %}>
-            <div class="p-4 text-center border-2 border-gray-200 rounded-xl peer-checked:border-primary peer-checked:bg-primary/5 hover:border-primary transition-all {% if slot not in available_slots %}opacity-50 cursor-not-allowed{% endif %}">
-                <p class="font-medium text-gray-900">{{ slot }}</p>
-                <p class="text-xs text-gray-500 mt-1">
-                    {% if slot not in available_slots %}Booked{% else %}Available{% endif %}
-                </p>
-            </div>
-        </label>
-        {% endfor %}
-    </div>
-</div>
+                        <!-- Time Selection -->
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-3">Select Time Slot</label>
+                            <div class="grid grid-cols-2 gap-3">
+                                {% set time_slots = ["09:00", "10:00", "11:00", "12:00", "14:00", "15:00", "16:00", "17:00"] %}
+                                {% for slot in time_slots %}
+                                <label class="cursor-pointer">
+                                    <input type="radio" 
+                                           name="booking_time" 
+                                           value="{{ slot }}" 
+                                           required 
+                                           class="peer sr-only"
+                                           {% if slot in booked_times %}disabled{% endif %}>
+                                    <div class="p-4 text-center border-2 border-gray-200 rounded-xl peer-checked:border-primary peer-checked:bg-primary/5 hover:border-primary transition-all {% if slot in booked_times %}opacity-50 cursor-not-allowed{% endif %}">
+                                        <p class="font-medium text-gray-900">{{ slot }}</p>
+                                        <p class="text-xs text-gray-500 mt-1">
+                                            {% if slot in booked_times %}Booked{% else %}Available{% endif %}
+                                        </p>
+                                    </div>
+                                </label>
+                                {% endfor %}
+                            </div>
+                        </div>
 
-<!-- Duration Selection -->
-<div class="mt-6">
-    <label class="block text-sm font-semibold text-gray-700 mb-3">Session Duration</label>
-    <div class="grid grid-cols-3 gap-3">
-        <label class="cursor-pointer">
-            <input type="radio" name="duration" value="30" class="peer sr-only">
-            <div class="p-4 text-center border-2 border-gray-200 rounded-xl peer-checked:border-primary peer-checked:bg-primary/5 hover:border-primary transition-all">
-                <p class="font-medium text-gray-900">30 min</p>
-                <p class="text-xs text-gray-500 mt-1">Quick Session</p>
-            </div>
-        </label>
-        <label class="cursor-pointer">
-            <input type="radio" name="duration" value="60" checked class="peer sr-only">
-            <div class="p-4 text-center border-2 border-gray-200 rounded-xl peer-checked:border-primary peer-checked:bg-primary/5 hover:border-primary transition-all">
-                <p class="font-medium text-gray-900">60 min</p>
-                <p class="text-xs text-gray-500 mt-1">Standard</p>
-            </div>
-        </label>
-        <label class="cursor-pointer">
-            <input type="radio" name="duration" value="90" class="peer sr-only">
-            <div class="p-4 text-center border-2 border-gray-200 rounded-xl peer-checked:border-primary peer-checked:bg-primary/5 hover:border-primary transition-all">
-                <p class="font-medium text-gray-900">90 min</p>
-                <p class="text-xs text-gray-500 mt-1">Extended</p>
-            </div>
-        </label>
-    </div>
-</div>
+                        <!-- Duration Selection -->
+                        <div class="mt-6">
+                            <label class="block text-sm font-semibold text-gray-700 mb-3">Session Duration</label>
+                            <div class="grid grid-cols-3 gap-3">
+                                <label class="cursor-pointer">
+                                    <input type="radio" name="duration" value="30" class="peer sr-only">
+                                    <div class="p-4 text-center border-2 border-gray-200 rounded-xl peer-checked:border-primary peer-checked:bg-primary/5 hover:border-primary transition-all">
+                                        <p class="font-medium text-gray-900">30 min</p>
+                                        <p class="text-xs text-gray-500 mt-1">Quick Session</p>
+                                    </div>
+                                </label>
+                                <label class="cursor-pointer">
+                                    <input type="radio" name="duration" value="60" checked class="peer sr-only">
+                                    <div class="p-4 text-center border-2 border-gray-200 rounded-xl peer-checked:border-primary peer-checked:bg-primary/5 hover:border-primary transition-all">
+                                        <p class="font-medium text-gray-900">60 min</p>
+                                        <p class="text-xs text-gray-500 mt-1">Standard</p>
+                                    </div>
+                                </label>
+                                <label class="cursor-pointer">
+                                    <input type="radio" name="duration" value="90" class="peer sr-only">
+                                    <div class="p-4 text-center border-2 border-gray-200 rounded-xl peer-checked:border-primary peer-checked:bg-primary/5 hover:border-primary transition-all">
+                                        <p class="font-medium text-gray-900">90 min</p>
+                                        <p class="text-xs text-gray-500 mt-1">Extended</p>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
 
                         <!-- Price Summary -->
                         <div class="pt-6 border-t border-gray-200">
@@ -333,7 +332,7 @@
                             </div>
 
                             <!-- Book Button -->
-                            {% if slots and mentor.services %}
+                            {% if mentor.services %}
                             <button type="submit" 
                                     class="w-full py-4 bg-gradient-to-r from-primary to-secondary text-white font-bold rounded-xl hover:shadow-xl transition-all transform hover:-translate-y-1 flex items-center justify-center gap-3">
                                 <i class="fas fa-lock"></i>
@@ -347,16 +346,8 @@
                             <button disabled 
                                     class="w-full py-4 bg-gray-300 text-gray-500 font-bold rounded-xl cursor-not-allowed flex items-center justify-center gap-3">
                                 <i class="fas fa-calendar-times"></i>
-                                {% if not mentor.services %}No Services{% else %}No Available Slots{% endif %}
+                                No Services Available
                             </button>
-                            
-                            {% if slots %}
-                            <button type="button" 
-                                    onclick="requestAvailability()"
-                                    class="w-full mt-3 py-3 border-2 border-primary text-primary font-semibold rounded-xl hover:bg-primary hover:text-white transition-colors">
-                                Request Different Time
-                            </button>
-                            {% endif %}
                             {% endif %}
                         </div>
                     </form>
@@ -389,9 +380,19 @@
     </div>
 </div>
 
-
-
 <script>
+let selectedPayment = 'razorpay';
+
+function selectPayment(method) {
+    selectedPayment = method;
+    document.querySelectorAll('[onclick^="selectPayment"]').forEach(btn => {
+        btn.classList.remove('border-primary', 'bg-primary/5');
+        btn.classList.add('border-gray-200');
+    });
+    event.currentTarget.classList.remove('border-gray-200');
+    event.currentTarget.classList.add('border-primary', 'bg-primary/5');
+}
+
 // Set today's date as min date
 document.addEventListener('DOMContentLoaded', function() {
     const today = new Date().toISOString().split('T')[0];
@@ -403,42 +404,21 @@ document.addEventListener('DOMContentLoaded', function() {
         const time = document.querySelector('input[name="booking_time"]:checked').value;
         const meetingLink = `https://meet.google.com/new?date=${date}&time=${time}`;
         
-        // You would typically send this to backend
         console.log('Meeting link:', meetingLink);
     });
 });
-let selectedPayment = 'razorpay';
-
-function selectPayment(method) {
-    selectedPayment = method;
-    // Update UI to show selected payment method
-    document.querySelectorAll('[onclick^="selectPayment"]').forEach(btn => {
-        btn.classList.remove('border-primary', 'bg-primary/5');
-        btn.classList.add('border-gray-200');
-    });
-    event.currentTarget.classList.remove('border-gray-200');
-    event.currentTarget.classList.add('border-primary', 'bg-primary/5');
-}
-
-function requestAvailability() {
-    alert('Availability request sent! The mentor will contact you with alternative time slots.');
-}
 
 // Form submission handler
 document.querySelector('form').addEventListener('submit', function(e) {
-    e.preventDefault();
-    
-    // Get form data
     const serviceInput = document.querySelector('input[name="service"]:checked');
-    const slotInput = document.querySelector('input[name="slot"]:checked');
+    const dateInput = document.querySelector('input[name="booking_date"]');
+    const timeInput = document.querySelector('input[name="booking_time"]:checked');
     
-    if (!serviceInput || !slotInput) {
-        alert('Please select both a service and a time slot');
+    if (!serviceInput || !dateInput.value || !timeInput) {
+        e.preventDefault();
+        alert('Please fill all required fields: service, date, and time');
         return;
     }
-    
-    const service = serviceInput.value;
-    const slot = slotInput.value;
     
     // Show loading state
     const submitBtn = this.querySelector('button[type="submit"]');
@@ -447,11 +427,6 @@ document.querySelector('form').addEventListener('submit', function(e) {
     const originalText = submitBtn.innerHTML;
     submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
     submitBtn.disabled = true;
-    
-    // Submit the form
-    setTimeout(() => {
-        this.submit();
-    }, 1000);
 });
 </script>
 
