@@ -10,7 +10,16 @@
                     <span class="text-xl font-bold text-primary">{{ mentor.username[0]|upper }}</span>
                 </div>
                 <div>
-                    <h4 class="text-lg font-bold text-gray-900">{{ mentor.full_name or mentor.username }}</h4>
+                    <div class="flex items-center gap-2">
+                        <h4 class="text-lg font-bold text-gray-900">{{ mentor.full_name or mentor.username }}</h4>
+                        <!-- Profile Link Icon -->
+                        <a href="{{ url_for('mentor_public_profile', id=mentor.id) }}" 
+                           target="_blank"
+                           class="text-blue-600 hover:text-blue-800 text-sm"
+                           title="View Public Profile">
+                            <i class="fas fa-external-link-alt"></i>
+                        </a>
+                    </div>
                     <p class="text-sm text-gray-600 flex items-center gap-1">
                         <i class="fas fa-building text-xs"></i>
                         {{ mentor.company or 'Not specified' }}
@@ -95,29 +104,20 @@
             </a>
         </div>
         
-        <!-- Quick Stats and Profile Link -->
-        <div class="flex items-center justify-between mt-4 pt-4 border-t border-gray-200">
-            <div class="flex items-center gap-6">
-                <div class="text-center">
-                    <p class="text-sm font-semibold text-gray-900">50+</p>
-                    <p class="text-xs text-gray-500">Sessions</p>
-                </div>
-                <div class="text-center">
-                    <p class="text-sm font-semibold text-gray-900">94%</p>
-                    <p class="text-xs text-gray-500">Success Rate</p>
-                </div>
-                <div class="text-center">
-                    <p class="text-sm font-semibold text-gray-900">24</p>
-                    <p class="text-xs text-gray-500">Reviews</p>
-                </div>
+        <!-- Quick Stats -->
+        <div class="flex items-center justify-center gap-6 mt-4 pt-4 border-t border-gray-200">
+            <div class="text-center">
+                <p class="text-sm font-semibold text-gray-900">50+</p>
+                <p class="text-xs text-gray-500">Sessions</p>
             </div>
-            
-            {% if mentor.profile_slug %}
-            <a href="{{ url_for('mentor_public_profile', profile_slug=mentor.profile_slug) }}" 
-               class="px-3 py-1 border border-primary text-primary text-xs rounded-lg hover:bg-primary hover:text-white transition-colors flex items-center gap-1">
-                <i class="fas fa-link text-xs"></i> Profile
-            </a>
-            {% endif %}
+            <div class="text-center">
+                <p class="text-sm font-semibold text-gray-900">94%</p>
+                <p class="text-xs text-gray-500">Success Rate</p>
+            </div>
+            <div class="text-center">
+                <p class="text-sm font-semibold text-gray-900">24</p>
+                <p class="text-xs text-gray-500">Reviews</p>
+            </div>
         </div>
     </div>
 </div>
