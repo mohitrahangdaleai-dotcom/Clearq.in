@@ -14,21 +14,6 @@
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     
-    <!-- Meta tags for social sharing (for profile pages) -->
-    {% if request.path.startswith('/mentor/public/') and mentor %}
-    <meta property="og:title" content="{{ mentor.full_name or mentor.username }} - ClearQ Mentor">
-    <meta property="og:description" content="{{ mentor.bio[:150] if mentor.bio else mentor.job_title + ' at ' + mentor.company }}">
-    <meta property="og:image" content="https://clearq.in/static/logo.png">
-    <meta property="og:url" content="{{ request.url }}">
-    <meta property="og:type" content="website">
-    <meta name="twitter:card" content="summary_large_image">
-    {% else %}
-    <meta property="og:title" content="ClearQ - Expert Career Mentorship">
-    <meta property="og:description" content="Connect with industry experts to accelerate your career growth">
-    <meta property="og:image" content="https://clearq.in/static/logo.png">
-    <meta property="og:url" content="{{ request.url }}">
-    {% endif %}
-    
     <style>
         /* Custom CSS Variables */
         :root {
@@ -114,56 +99,6 @@
         .mobile-menu.active {
             display: block;
         }
-
-        /* Scrollbar Styling */
-        ::-webkit-scrollbar {
-            width: 8px;
-        }
-        
-        ::-webkit-scrollbar-track {
-            background: #f1f1f1;
-            border-radius: 4px;
-        }
-        
-        ::-webkit-scrollbar-thumb {
-            background: linear-gradient(to bottom, var(--primary), var(--secondary));
-            border-radius: 4px;
-        }
-        
-        ::-webkit-scrollbar-thumb:hover {
-            background: linear-gradient(to bottom, var(--primary-dark), var(--secondary));
-        }
-
-        /* Notification Animation */
-        .notification-slide {
-            animation: slideIn 0.3s ease-out;
-        }
-        
-        @keyframes slideIn {
-            from {
-                transform: translateX(100%);
-                opacity: 0;
-            }
-            to {
-                transform: translateX(0);
-                opacity: 1;
-            }
-        }
-
-        /* Loading Spinner */
-        .spinner {
-            animation: spin 1s linear infinite;
-        }
-        
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        /* Modal Overlay */
-        .modal-overlay {
-            backdrop-filter: blur(4px);
-        }
     </style>
     
     <!-- Custom Tailwind Configuration -->
@@ -182,21 +117,11 @@
                     },
                     animation: {
                         'float': 'float 6s ease-in-out infinite',
-                        'slide-in': 'slideIn 0.3s ease-out',
-                        'spin-slow': 'spin 2s linear infinite',
                     },
                     keyframes: {
                         float: {
                             '0%, 100%': { transform: 'translateY(0px)' },
                             '50%': { transform: 'translateY(-10px)' },
-                        },
-                        slideIn: {
-                            'from': { transform: 'translateX(100%)', opacity: '0' },
-                            'to': { transform: 'translateX(0)', opacity: '1' },
-                        },
-                        spin: {
-                            '0%': { transform: 'rotate(0deg)' },
-                            '100%': { transform: 'rotate(360deg)' },
                         }
                     }
                 }
@@ -207,7 +132,7 @@
 <body class="bg-gray-50 flex flex-col min-h-screen">
 
     <!-- Modern Header -->
-    <header id="mainHeader" class="bg-white/85 backdrop-blur-xl sticky top-0 z-50 border-b border-gray-100 shadow-sm">
+    <header id="mainHeader" class="bg-white/85 backdrop-blur-xl sticky top-0 z-50 border-b border-gray-100">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between items-center h-16">
                 <!-- Logo -->
@@ -220,56 +145,40 @@
 
                 <!-- Desktop Navigation -->
                 <nav class="hidden md:flex items-center space-x-8">
-                    <a href="{{ url_for('explore') }}" class="text-gray-700 hover:text-primary font-medium transition-colors relative group">
-                        Find Mentors
-                        <span class="absolute bottom-0 left-0 w-0 h-0.5 bg-primary group-hover:w-full transition-all duration-300"></span>
-                    </a>
-                    <a href="#how-it-works" class="text-gray-700 hover:text-primary font-medium transition-colors relative group">
-                        How It Works
-                        <span class="absolute bottom-0 left-0 w-0 h-0.5 bg-primary group-hover:w-full transition-all duration-300"></span>
-                    </a>
-                    <a href="#categories" class="text-gray-700 hover:text-primary font-medium transition-colors relative group">
-                        Categories
-                        <span class="absolute bottom-0 left-0 w-0 h-0.5 bg-primary group-hover:w-full transition-all duration-300"></span>
-                    </a>
+                    <a href="{{ url_for('explore') }}" class="text-gray-700 hover:text-primary font-medium transition-colors">Find Mentors</a>
+                    <a href="#how-it-works" class="text-gray-700 hover:text-primary font-medium transition-colors">How It Works</a>
+                    <a href="#categories" class="text-gray-700 hover:text-primary font-medium transition-colors">Categories</a>
+                    <a href="{{ url_for('mentorship_program') }}" class="text-gray-700 hover:text-primary font-medium transition-colors">Mentorship Program</a>
                     
                     {% if current_user.is_authenticated %}
-                        <!-- Add Mentor Profile Link in Nav if user is mentor -->
-                        {% if current_user.role == 'mentor' and current_user.profile_slug %}
-                        <a href="{{ url_for('mentor_public_profile', profile_slug=current_user.profile_slug) }}" 
-                           class="text-gray-700 hover:text-primary font-medium transition-colors relative group">
-                            My Profile
-                            <span class="absolute bottom-0 left-0 w-0 h-0.5 bg-primary group-hover:w-full transition-all duration-300"></span>
-                        </a>
+                        <!-- Mentor-specific links -->
+                        {% if current_user.role == 'mentor' %}
+                            <a href="{{ url_for('manage_profile_link') }}" class="text-gray-700 hover:text-primary font-medium transition-colors">Profile Link</a>
+                            <a href="{{ url_for('mentor_public_profile', id=current_user.id) }}" target="_blank" class="text-gray-700 hover:text-primary font-medium transition-colors">Public Profile</a>
                         {% endif %}
                         
-                        <a href="{{ url_for('dashboard') }}" 
-                           class="text-gray-700 hover:text-primary font-medium transition-colors relative group flex items-center">
-                            <i class="fas fa-tachometer-alt mr-2"></i>
-                            Dashboard
-                            <span class="absolute bottom-0 left-0 w-0 h-0.5 bg-primary group-hover:w-full transition-all duration-300"></span>
-                        </a>
+                        <a href="{{ url_for('dashboard') }}" class="text-gray-700 hover:text-primary font-medium transition-colors">Dashboard</a>
                         
                         <div class="flex items-center space-x-4">
                             <div class="flex items-center space-x-2">
                                 <div class="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-white text-sm font-semibold">
                                     {{ current_user.username[0]|upper }}
                                 </div>
-                                <span class="text-sm text-gray-600 hidden lg:inline">Hi, {{ current_user.username }}</span>
+                                <span class="text-sm text-gray-600">Hi, {{ current_user.username }}</span>
                             </div>
                             <a href="{{ url_for('logout') }}" 
-                               class="px-4 py-2 rounded-lg bg-gradient-to-r from-red-500 to-red-600 text-white font-medium hover:shadow-lg transition-all hover:scale-105">
+                               class="px-4 py-2 rounded-lg bg-gradient-to-r from-red-500 to-red-600 text-white font-medium hover:shadow-lg transition-all">
                                 Logout
                             </a>
                         </div>
                     {% else %}
                         <div class="flex items-center space-x-4">
                             <a href="{{ url_for('login') }}" 
-                               class="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 font-medium hover:bg-gray-50 transition-colors hover:border-primary">
+                               class="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 font-medium hover:bg-gray-50 transition-colors">
                                 Log In
                             </a>
                             <a href="{{ url_for('register') }}" 
-                               class="px-4 py-2 rounded-lg bg-gradient-to-r from-primary to-secondary text-white font-medium hover:shadow-lg hover:shadow-primary/25 transition-all hover:scale-105">
+                               class="px-4 py-2 rounded-lg bg-gradient-to-r from-primary to-secondary text-white font-medium hover:shadow-lg hover:shadow-primary/25 transition-all">
                                 Get Started
                             </a>
                         </div>
@@ -277,7 +186,7 @@
                 </nav>
 
                 <!-- Mobile Menu Button -->
-                <button id="mobileMenuButton" class="md:hidden text-gray-700 p-2 hover:bg-gray-100 rounded-lg transition-colors">
+                <button id="mobileMenuButton" class="md:hidden text-gray-700 p-2">
                     <i class="fas fa-bars text-xl"></i>
                 </button>
             </div>
@@ -285,54 +194,44 @@
             <!-- Mobile Menu -->
             <div id="mobileMenu" class="mobile-menu md:hidden">
                 <div class="py-4 space-y-3">
-                    <a href="{{ url_for('explore') }}" class="block py-3 px-4 text-gray-700 hover:text-primary hover:bg-gray-50 rounded-lg transition-colors">
-                        <i class="fas fa-search mr-3"></i> Find Mentors
-                    </a>
-                    <a href="#how-it-works" class="block py-3 px-4 text-gray-700 hover:text-primary hover:bg-gray-50 rounded-lg transition-colors">
-                        <i class="fas fa-question-circle mr-3"></i> How It Works
-                    </a>
-                    <a href="#categories" class="block py-3 px-4 text-gray-700 hover:text-primary hover:bg-gray-50 rounded-lg transition-colors">
-                        <i class="fas fa-layer-group mr-3"></i> Categories
-                    </a>
+                    <a href="{{ url_for('explore') }}" class="block py-2 text-gray-700 hover:text-primary">Find Mentors</a>
+                    <a href="#how-it-works" class="block py-2 text-gray-700 hover:text-primary">How It Works</a>
+                    <a href="#categories" class="block py-2 text-gray-700 hover:text-primary">Categories</a>
+                    <a href="{{ url_for('mentorship_program') }}" class="block py-2 text-gray-700 hover:text-primary">Mentorship Program</a>
                     
                     {% if current_user.is_authenticated %}
-                        <!-- Add Mentor Profile Link in Mobile Menu -->
-                        {% if current_user.role == 'mentor' and current_user.profile_slug %}
-                        <a href="{{ url_for('mentor_public_profile', profile_slug=current_user.profile_slug) }}" 
-                           class="block py-3 px-4 text-gray-700 hover:text-primary hover:bg-gray-50 rounded-lg transition-colors">
-                            <i class="fas fa-user mr-3"></i> My Profile
-                        </a>
+                        <!-- Mentor-specific mobile links -->
+                        {% if current_user.role == 'mentor' %}
+                            <a href="{{ url_for('manage_profile_link') }}" class="block py-2 text-gray-700 hover:text-primary">Profile Link</a>
+                            <a href="{{ url_for('mentor_public_profile', id=current_user.id) }}" target="_blank" class="block py-2 text-gray-700 hover:text-primary">Public Profile</a>
                         {% endif %}
                         
-                        <a href="{{ url_for('dashboard') }}" 
-                           class="block py-3 px-4 text-gray-700 hover:text-primary hover:bg-gray-50 rounded-lg transition-colors">
-                            <i class="fas fa-tachometer-alt mr-3"></i> Dashboard
-                        </a>
+                        <a href="{{ url_for('dashboard') }}" class="block py-2 text-gray-700 hover:text-primary">Dashboard</a>
                         
                         <div class="pt-4 border-t border-gray-200">
-                            <div class="flex items-center space-x-3 mb-4 p-4 bg-gray-50 rounded-lg">
+                            <div class="flex items-center space-x-3 mb-4">
                                 <div class="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-white font-semibold">
                                     {{ current_user.username[0]|upper }}
                                 </div>
                                 <div>
                                     <p class="font-medium text-gray-900">{{ current_user.username }}</p>
-                                    <p class="text-sm text-gray-500">{{ current_user.role|title }}</p>
+                                    <p class="text-xs text-gray-600">{{ current_user.role|title }}</p>
                                 </div>
                             </div>
                             <a href="{{ url_for('logout') }}" 
-                               class="block w-full text-center py-3 px-4 rounded-lg bg-gradient-to-r from-red-500 to-red-600 text-white font-medium hover:shadow-lg">
-                                <i class="fas fa-sign-out-alt mr-2"></i> Logout
+                               class="block w-full text-center py-3 rounded-lg bg-gradient-to-r from-red-500 to-red-600 text-white font-medium">
+                                Logout
                             </a>
                         </div>
                     {% else %}
                         <div class="pt-4 border-t border-gray-200 space-y-3">
                             <a href="{{ url_for('login') }}" 
-                               class="block w-full text-center py-3 px-4 rounded-lg border border-gray-300 text-gray-700 font-medium hover:bg-gray-50">
-                                <i class="fas fa-sign-in-alt mr-2"></i> Log In
+                               class="block w-full text-center py-3 rounded-lg border border-gray-300 text-gray-700 font-medium">
+                                Log In
                             </a>
                             <a href="{{ url_for('register') }}" 
-                               class="block w-full text-center py-3 px-4 rounded-lg bg-gradient-to-r from-primary to-secondary text-white font-medium hover:shadow-lg">
-                                <i class="fas fa-user-plus mr-2"></i> Get Started
+                               class="block w-full text-center py-3 rounded-lg bg-gradient-to-r from-primary to-secondary text-white font-medium">
+                                Get Started
                             </a>
                         </div>
                     {% endif %}
@@ -344,17 +243,12 @@
     <!-- Flash Messages -->
     {% with messages = get_flashed_messages() %}
         {% if messages %}
-            <div class="max-w-7xl mx-auto mt-4 px-4" id="flashMessages">
+            <div class="max-w-7xl mx-auto mt-4 px-4">
                 {% for message in messages %}
-                    <div class="reveal active bg-gradient-to-r from-blue-50 to-blue-100 border-l-4 border-primary text-blue-700 p-4 rounded-lg shadow-sm mb-2" role="alert">
-                        <div class="flex items-center justify-between">
-                            <div class="flex items-center">
-                                <i class="fas fa-info-circle mr-3"></i>
-                                <p class="font-medium">{{ message }}</p>
-                            </div>
-                            <button onclick="this.parentElement.parentElement.remove()" class="text-blue-500 hover:text-blue-700">
-                                <i class="fas fa-times"></i>
-                            </button>
+                    <div class="reveal active bg-gradient-to-r from-blue-50 to-blue-100 border-l-4 border-primary text-blue-700 p-4 rounded-lg shadow-sm" role="alert">
+                        <div class="flex items-center">
+                            <i class="fas fa-info-circle mr-3"></i>
+                            <p class="font-medium">{{ message }}</p>
                         </div>
                     </div>
                 {% endfor %}
@@ -383,106 +277,52 @@
                         Democratizing mentorship for everyone. Connect with industry experts to accelerate your career growth.
                     </p>
                     <div class="flex space-x-4">
-                        <a href="#" class="w-10 h-10 rounded-full bg-gray-800 hover:bg-gray-700 flex items-center justify-center transition-colors group">
-                            <i class="fab fa-twitter text-gray-400 group-hover:text-white transition-colors"></i>
+                        <a href="#" class="w-10 h-10 rounded-full bg-gray-800 hover:bg-gray-700 flex items-center justify-center transition-colors">
+                            <i class="fab fa-twitter text-gray-400 hover:text-white"></i>
                         </a>
-                        <a href="#" class="w-10 h-10 rounded-full bg-gray-800 hover:bg-gray-700 flex items-center justify-center transition-colors group">
-                            <i class="fab fa-linkedin-in text-gray-400 group-hover:text-white transition-colors"></i>
+                        <a href="#" class="w-10 h-10 rounded-full bg-gray-800 hover:bg-gray-700 flex items-center justify-center transition-colors">
+                            <i class="fab fa-linkedin-in text-gray-400 hover:text-white"></i>
                         </a>
-                        <a href="#" class="w-10 h-10 rounded-full bg-gray-800 hover:bg-gray-700 flex items-center justify-center transition-colors group">
-                            <i class="fab fa-instagram text-gray-400 group-hover:text-white transition-colors"></i>
-                        </a>
-                        <a href="#" class="w-10 h-10 rounded-full bg-gray-800 hover:bg-gray-700 flex items-center justify-center transition-colors group">
-                            <i class="fab fa-facebook-f text-gray-400 group-hover:text-white transition-colors"></i>
+                        <a href="#" class="w-10 h-10 rounded-full bg-gray-800 hover:bg-gray-700 flex items-center justify-center transition-colors">
+                            <i class="fab fa-instagram text-gray-400 hover:text-white"></i>
                         </a>
                     </div>
                 </div>
 
                 <!-- Quick Links -->
                 <div>
-                    <h3 class="text-lg font-semibold mb-6 text-white">Quick Links</h3>
+                    <h3 class="text-lg font-semibold mb-6">Quick Links</h3>
                     <ul class="space-y-3">
-                        <li><a href="{{ url_for('explore') }}" class="text-gray-400 hover:text-white transition-colors flex items-center group">
-                            <i class="fas fa-chevron-right text-xs mr-2 opacity-0 group-hover:opacity-100 transition-opacity"></i>
-                            Find Mentors
-                        </a></li>
-                        <li><a href="{{ url_for('register') }}?role=mentor" class="text-gray-400 hover:text-white transition-colors flex items-center group">
-                            <i class="fas fa-chevron-right text-xs mr-2 opacity-0 group-hover:opacity-100 transition-opacity"></i>
-                            Become a Mentor
-                        </a></li>
-                        <li><a href="{{ url_for('mentorship_program') }}" class="text-gray-400 hover:text-white transition-colors flex items-center group">
-                            <i class="fas fa-chevron-right text-xs mr-2 opacity-0 group-hover:opacity-100 transition-opacity"></i>
-                            Mentorship Program
-                        </a></li>
-                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors flex items-center group">
-                            <i class="fas fa-chevron-right text-xs mr-2 opacity-0 group-hover:opacity-100 transition-opacity"></i>
-                            Success Stories
-                        </a></li>
+                        <li><a href="{{ url_for('explore') }}" class="text-gray-400 hover:text-white transition-colors">Find Mentors</a></li>
+                        <li><a href="{{ url_for('register') }}" class="text-gray-400 hover:text-white transition-colors">Become a Mentor</a></li>
+                        <li><a href="{{ url_for('mentorship_program') }}" class="text-gray-400 hover:text-white transition-colors">Mentorship Program</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors">Success Stories</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors">Blog</a></li>
                     </ul>
                 </div>
 
                 <!-- Resources -->
                 <div>
-                    <h3 class="text-lg font-semibold mb-6 text-white">Resources</h3>
+                    <h3 class="text-lg font-semibold mb-6">Resources</h3>
                     <ul class="space-y-3">
-                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors flex items-center group">
-                            <i class="fas fa-chevron-right text-xs mr-2 opacity-0 group-hover:opacity-100 transition-opacity"></i>
-                            Career Guides
-                        </a></li>
-                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors flex items-center group">
-                            <i class="fas fa-chevron-right text-xs mr-2 opacity-0 group-hover:opacity-100 transition-opacity"></i>
-                            Interview Prep
-                        </a></li>
-                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors flex items-center group">
-                            <i class="fas fa-chevron-right text-xs mr-2 opacity-0 group-hover:opacity-100 transition-opacity"></i>
-                            Skill Assessments
-                        </a></li>
-                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors flex items-center group">
-                            <i class="fas fa-chevron-right text-xs mr-2 opacity-0 group-hover:opacity-100 transition-opacity"></i>
-                            FAQ
-                        </a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors">Career Guides</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors">Interview Prep</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors">Skill Assessments</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors">FAQ</a></li>
+                        <li><a href="{{ url_for('enroll') }}" class="text-gray-400 hover:text-white transition-colors">Enroll Now</a></li>
                     </ul>
                 </div>
 
                 <!-- Contact & Legal -->
                 <div>
-                    <h3 class="text-lg font-semibold mb-6 text-white">Contact & Legal</h3>
+                    <h3 class="text-lg font-semibold mb-6">Contact & Legal</h3>
                     <ul class="space-y-3">
-                        <li><a href="mailto:support@clearq.in" class="text-gray-400 hover:text-white transition-colors flex items-center group">
-                            <i class="fas fa-envelope text-sm mr-2"></i>
-                            support@clearq.in
-                        </a></li>
-                        <li><a href="tel:+911234567890" class="text-gray-400 hover:text-white transition-colors flex items-center group">
-                            <i class="fas fa-phone text-sm mr-2"></i>
-                            +91 12345 67890
-                        </a></li>
-                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors flex items-center group">
-                            <i class="fas fa-shield-alt text-sm mr-2"></i>
-                            Privacy Policy
-                        </a></li>
-                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors flex items-center group">
-                            <i class="fas fa-file-contract text-sm mr-2"></i>
-                            Terms of Service
-                        </a></li>
+                        <li><a href="mailto:support@clearq.in" class="text-gray-400 hover:text-white transition-colors">support@clearq.in</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors">Privacy Policy</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors">Terms of Service</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors">Cookie Policy</a></li>
+                        <li><a href="/debug" class="text-gray-400 hover:text-white transition-colors">Debug Info</a></li>
                     </ul>
-                </div>
-            </div>
-
-            <!-- Newsletter Subscription -->
-            <div class="mt-12 pt-12 border-t border-gray-800">
-                <div class="text-center mb-8">
-                    <h3 class="text-xl font-semibold mb-3 text-white">Stay Updated</h3>
-                    <p class="text-gray-400 max-w-xl mx-auto">Subscribe to our newsletter for the latest mentorship insights and career tips</p>
-                </div>
-                <div class="max-w-md mx-auto">
-                    <form class="flex">
-                        <input type="email" placeholder="Your email address" 
-                               class="flex-1 px-4 py-3 bg-gray-800 border border-gray-700 text-white rounded-l-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent">
-                        <button type="submit" 
-                                class="px-6 py-3 bg-gradient-to-r from-primary to-secondary text-white font-semibold rounded-r-lg hover:opacity-90 transition-opacity">
-                            Subscribe
-                        </button>
-                    </form>
                 </div>
             </div>
 
@@ -490,31 +330,11 @@
             <div class="border-t border-gray-800 mt-8 pt-8 text-center text-gray-500 text-sm">
                 <div class="flex flex-col md:flex-row justify-between items-center">
                     <p>&copy; 2024 ClearQ.in. All rights reserved.</p>
-                    <div class="flex items-center mt-2 md:mt-0">
-                        <p class="flex items-center">
-                            Made with <i class="fas fa-heart text-red-500 mx-1 animate-pulse"></i> for the community
-                        </p>
-                    </div>
+                    <p class="mt-2 md:mt-0">Made with <i class="fas fa-heart text-red-500 mx-1"></i> for the community</p>
                 </div>
             </div>
         </div>
     </footer>
-
-    <!-- Floating Action Button (for mobile) -->
-    {% if current_user.is_authenticated and current_user.role == 'mentor' %}
-    <a href="{{ url_for('manage_profile_link') }}" 
-       class="md:hidden fixed bottom-6 right-6 w-14 h-14 bg-gradient-to-br from-primary to-secondary rounded-full shadow-lg flex items-center justify-center text-white z-40 hover:scale-110 transition-transform">
-        <i class="fas fa-link text-xl"></i>
-    </a>
-    {% endif %}
-
-    <!-- Loading Spinner -->
-    <div id="loadingSpinner" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
-        <div class="bg-white p-8 rounded-2xl shadow-2xl flex flex-col items-center">
-            <div class="w-16 h-16 border-4 border-primary border-t-transparent rounded-full spinner"></div>
-            <p class="mt-4 text-gray-700 font-medium">Loading...</p>
-        </div>
-    </div>
 
     <!-- JavaScript -->
     <script>
@@ -523,8 +343,7 @@
         const mobileMenu = document.getElementById('mobileMenu');
         const menuIcon = mobileMenuButton.querySelector('i');
 
-        mobileMenuButton.addEventListener('click', (e) => {
-            e.stopPropagation();
+        mobileMenuButton.addEventListener('click', () => {
             mobileMenu.classList.toggle('active');
             if (mobileMenu.classList.contains('active')) {
                 menuIcon.classList.remove('fa-bars');
@@ -543,28 +362,6 @@
                 menuIcon.classList.add('fa-bars');
             }
         });
-
-        // Close mobile menu when clicking on links
-        mobileMenu.querySelectorAll('a').forEach(link => {
-            link.addEventListener('click', () => {
-                mobileMenu.classList.remove('active');
-                menuIcon.classList.remove('fa-times');
-                menuIcon.classList.add('fa-bars');
-            });
-        });
-
-        // Auto-hide flash messages after 5 seconds
-        const flashMessages = document.getElementById('flashMessages');
-        if (flashMessages) {
-            setTimeout(() => {
-                const messages = flashMessages.querySelectorAll('.reveal');
-                messages.forEach(message => {
-                    message.style.opacity = '0';
-                    message.style.transform = 'translateY(-10px)';
-                    setTimeout(() => message.remove(), 300);
-                });
-            }, 5000);
-        }
 
         // Scroll animations
         const revealElements = document.querySelectorAll('.reveal');
@@ -654,108 +451,14 @@
             });
         });
 
-        // Show loading spinner on form submissions
-        document.querySelectorAll('form').forEach(form => {
-            if (!form.id) {
-                form.addEventListener('submit', () => {
-                    document.getElementById('loadingSpinner').classList.remove('hidden');
-                    document.getElementById('loadingSpinner').classList.add('flex');
-                });
-            }
-        });
-
-        // Hide loading spinner when page is fully loaded
-        window.addEventListener('load', () => {
-            document.getElementById('loadingSpinner').classList.add('hidden');
-            document.getElementById('loadingSpinner').classList.remove('flex');
-        });
-
-        // Back to top button
-        const backToTopButton = document.createElement('button');
-        backToTopButton.innerHTML = '<i class="fas fa-chevron-up"></i>';
-        backToTopButton.className = 'hidden fixed bottom-6 right-6 md:bottom-8 md:right-8 w-12 h-12 bg-gradient-to-br from-primary to-secondary text-white rounded-full shadow-lg flex items-center justify-center z-40 hover:scale-110 transition-transform';
-        backToTopButton.id = 'backToTop';
-        document.body.appendChild(backToTopButton);
-
-        backToTopButton.addEventListener('click', () => {
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-        });
-
-        window.addEventListener('scroll', () => {
-            if (window.pageYOffset > 300) {
-                backToTopButton.classList.remove('hidden');
-                backToTopButton.classList.add('flex');
-            } else {
-                backToTopButton.classList.remove('flex');
-                backToTopButton.classList.add('hidden');
-            }
-        });
-
-        // Copy URL to clipboard function (global)
-        window.copyToClipboard = function(text) {
-            navigator.clipboard.writeText(text)
-                .then(() => {
-                    // Show toast notification
-                    showToast('Copied to clipboard!', 'success');
-                })
-                .catch(() => {
-                    // Fallback for older browsers
-                    const input = document.createElement('input');
-                    input.value = text;
-                    document.body.appendChild(input);
-                    input.select();
-                    document.execCommand('copy');
-                    document.body.removeChild(input);
-                    showToast('Copied to clipboard!', 'success');
-                });
-        };
-
-        // Global toast notification function
-        window.showToast = function(message, type = 'info') {
-            const toast = document.createElement('div');
-            toast.className = `fixed top-4 right-4 px-6 py-3 rounded-xl shadow-lg z-50 transform transition-all duration-300 notification-slide ${
-                type === 'success' ? 'bg-green-100 text-green-800 border border-green-200' :
-                type === 'error' ? 'bg-red-100 text-red-800 border border-red-200' :
-                'bg-blue-100 text-blue-800 border border-blue-200'
-            }`;
-            toast.innerHTML = `
-                <div class="flex items-center">
-                    <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'} mr-3"></i>
-                    <span>${message}</span>
-                </div>
-            `;
-            
-            document.body.appendChild(toast);
-            
-            // Remove after 3 seconds
-            setTimeout(() => {
-                toast.style.opacity = '0';
-                toast.style.transform = 'translateX(100%)';
-                setTimeout(() => toast.remove(), 300);
-            }, 3000);
-        };
-
-        // Share function for mentor profiles
-        window.shareProfile = function(title, text, url) {
-            if (navigator.share) {
-                navigator.share({
-                    title: title,
-                    text: text,
-                    url: url,
-                });
-            } else {
-                copyToClipboard(url);
-            }
-        };
-
-        // Initialize on page load
-        document.addEventListener('DOMContentLoaded', () => {
-            console.log('ClearQ Platform Loaded');
-            
-            // Add active class to current page in navigation
+        // Add active state to current page in navigation
+        document.addEventListener('DOMContentLoaded', function() {
             const currentPath = window.location.pathname;
-            document.querySelectorAll('nav a').forEach(link => {
-                if (link.getAttribute('href') === currentPath) {
+            const navLinks = document.querySelectorAll('nav a, .mobile-menu a');
+            
+            navLinks.forEach(link => {
+                const linkPath = link.getAttribute('href');
+                if (linkPath && currentPath === linkPath) {
                     link.classList.add('text-primary', 'font-semibold');
                 }
             });
