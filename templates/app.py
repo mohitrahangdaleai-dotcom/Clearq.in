@@ -1,7 +1,7 @@
 import os
 import json
 import random
-from datetime import datetime
+from datetime import datetime, date, timedelta
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
@@ -35,21 +35,25 @@ class User(UserMixin, db.Model):
     email = db.Column(db.String(100), unique=True, nullable=False)
     password_hash = db.Column(db.String(200))
     role = db.Column(db.String(20), default='learner')  # 'learner', 'mentor', 'admin'
-    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=True)  # Make nullable for existing DB
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=True)
     
     # Mentor Specific Fields
     full_name = db.Column(db.String(100), nullable=True)
     phone = db.Column(db.String(20), nullable=True)
     job_title = db.Column(db.String(100), nullable=True)
-    domain = db.Column(db.String(100), nullable=True)  # e.g., Data Science, SDE
+    domain = db.Column(db.String(100), nullable=True)
     company = db.Column(db.String(100), nullable=True)
     experience = db.Column(db.String(50), nullable=True)
     skills = db.Column(db.Text, nullable=True)
-    services = db.Column(db.Text, nullable=True)  # Resume Review, Mock Interview
-    bio = db.Column(db.Text, nullable=True)  # Used for AI matching
+    services = db.Column(db.Text, nullable=True)
+    bio = db.Column(db.Text, nullable=True)
     price = db.Column(db.Integer, default=0, nullable=True)
     availability = db.Column(db.String(50), nullable=True)
     is_verified = db.Column(db.Boolean, default=False)
+    
+    # Profile stats
+    profile_views = db.Column(db.Integer, default=0)
+    link_clicks = db.Column(db.Integer, default=0)
     
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
@@ -62,10 +66,10 @@ class Enrollment(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     program_name = db.Column(db.String(100), default='career_mentorship')
     enrollment_date = db.Column(db.DateTime, default=datetime.utcnow)
-    payment_status = db.Column(db.String(20), default='pending')  # pending, completed, failed
+    payment_status = db.Column(db.String(20), default='pending')
     payment_amount = db.Column(db.Integer, default=499)
-    status = db.Column(db.String(20), default='active')  # active, completed, cancelled
-    additional_data = db.Column(db.Text)  # Store form data as JSON
+    status = db.Column(db.String(20), default='active')
+    additional_data = db.Column(db.Text)
     
     user = db.relationship('User', backref='enrollments')
 
@@ -74,15 +78,19 @@ class Booking(db.Model):
     mentor_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     learner_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     service_name = db.Column(db.String(100))
-    booking_date = db.Column(db.Date)  # Date of booking
-    booking_time = db.Column(db.String(50))  # Time of booking
-    duration = db.Column(db.Integer, default=60)  # Duration in minutes
+    booking_date = db.Column(db.Date)
+    booking_time = db.Column(db.String(50))
+    duration = db.Column(db.Integer, default=60)
     status = db.Column(db.String(20), default='Pending')
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
-    # Add meeting link field
+    # Meeting details
     meeting_link = db.Column(db.String(500))
-    notes = db.Column(db.Text)  # Additional notes
+    notes = db.Column(db.Text)
+    
+    # Relationships
+    mentor = db.relationship('User', foreign_keys=[mentor_id], backref='mentor_bookings')
+    learner = db.relationship('User', foreign_keys=[learner_id], backref='learner_bookings')
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -90,9 +98,7 @@ def load_user(user_id):
 
 # --- AI ENGINE (No API) ---
 def get_ai_recommendations(user_goal):
-    """
-    Uses Scikit-Learn to find mentors whose bios/domains match the user's goal.
-    """
+    """Uses Scikit-Learn to find mentors whose bios/domains match the user's goal."""
     try:
         mentors = User.query.filter_by(role='mentor', is_verified=True).all()
         if not mentors:
@@ -101,7 +107,6 @@ def get_ai_recommendations(user_goal):
         # Prepare data for AI
         mentor_data = []
         for m in mentors:
-            # Combine relevant fields into a single 'content' string
             content = f"{m.domain} {m.company} {m.services} {m.bio} {m.skills}"
             mentor_data.append({'id': m.id, 'content': content, 'obj': m})
 
@@ -126,7 +131,7 @@ def get_ai_recommendations(user_goal):
         # Return top 3 matched mentor objects
         recommended_mentors = []
         for i, score in scores[:3]:
-            if score > 0.1:  # Threshold to filter completely irrelevant matches
+            if score > 0.1:
                 recommended_mentors.append(mentor_data[i]['obj'])
                 
         return recommended_mentors
@@ -140,7 +145,6 @@ def escapejs_filter(value):
     if value is None:
         return ''
     
-    # Basic escaping for JavaScript strings
     value = str(value)
     replacements = {
         '\\': '\\\\',
@@ -257,7 +261,6 @@ def add_sample_mentors():
     
     added_count = 0
     for data in sample_mentors:
-        # Check if mentor already exists
         if not User.query.filter_by(email=data['email']).first():
             mentor = User(
                 username=data['username'],
@@ -283,7 +286,7 @@ def add_sample_mentors():
     
     return f"Added {added_count} sample mentors! <a href='/explore'>Go to Explore</a>"
 
-# --- ROUTES ---
+# --- MAIN ROUTES ---
 
 @app.route('/')
 def index():
@@ -294,67 +297,41 @@ def explore():
     recommendations = []
     query = ""
     
-    # Debug logging
-    print("=== EXPLORE ROUTE ===")
-    
     if request.method == 'POST':
         query = request.form.get('goal')
-        print(f"Search query: {query}")
         if query:
             try:
                 recommendations = get_ai_recommendations(query)
-                print(f"AI found {len(recommendations)} recommendations")
             except Exception as e:
                 print(f"AI error: {e}")
-                # Fallback: simple text matching
                 mentors = User.query.filter_by(role='mentor', is_verified=True).all()
                 for mentor in mentors:
                     mentor_text = f"{mentor.domain or ''} {mentor.bio or ''} {mentor.skills or ''}".lower()
                     if query.lower() in mentor_text:
                         recommendations.append(mentor)
     
-    # Get all verified mentors
     all_mentors = User.query.filter_by(role='mentor', is_verified=True).all()
-    
-    # Debug logging
-    print(f"Total verified mentors: {len(all_mentors)}")
-    for mentor in all_mentors:
-        print(f"  - {mentor.username}: {mentor.domain}")
     
     return render_template('mentors.html', 
                          mentors=all_mentors, 
                          recommendations=recommendations, 
                          query=query)
-@app.route('/profile/link')
-@login_required
-def manage_profile_link():
-    """Manage mentor's public profile link"""
-    if current_user.role != 'mentor':
-        flash('Only mentors can manage profile links')
-        return redirect(url_for('dashboard'))
-    
-    # Get mentor's bookings
-    bookings = Booking.query.filter_by(mentor_id=current_user.id).all()
-    
-    return render_template('manage_profile_link.html', bookings=bookings)
+
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
         role = request.form.get('role')
         
         if role == 'learner':
-            # Handle learner registration
             username = request.form.get('username')
             email = request.form.get('email')
             password = request.form.get('password')
             confirm_password = request.form.get('confirm_password')
             
-            # Check if passwords match
             if password != confirm_password:
                 flash('Passwords do not match!')
                 return render_template('register.html')
             
-            # Check if user exists
             if User.query.filter_by(email=email).first():
                 flash('Email already registered')
                 return render_template('register.html')
@@ -362,7 +339,6 @@ def register():
                 flash('Username already taken')
                 return render_template('register.html')
             
-            # Create new learner
             user = User(username=username, email=email, role='learner')
             user.set_password(password)
             db.session.add(user)
@@ -372,7 +348,6 @@ def register():
             return redirect(url_for('login'))
             
         elif role == 'mentor':
-            # Handle mentor registration with new fields
             username = request.form.get('username')
             email = request.form.get('email')
             password = request.form.get('password')
@@ -388,16 +363,13 @@ def register():
             availability = request.form.get('availability')
             bio = request.form.get('bio')
             
-            # Get services as list and convert to string
             services_list = request.form.getlist('services')
             services = ', '.join(services_list) if services_list else ""
             
-            # Check if passwords match
             if password != confirm_password:
                 flash('Passwords do not match!')
                 return render_template('register.html')
             
-            # Check if user exists
             if User.query.filter_by(email=email).first():
                 flash('Email already registered')
                 return render_template('register.html')
@@ -405,7 +377,6 @@ def register():
                 flash('Username already taken')
                 return render_template('register.html')
             
-            # Create new mentor (unverified by default)
             if not username and full_name:
                 username = full_name.lower().replace(' ', '_')
             
@@ -439,24 +410,19 @@ def register():
 def enroll():
     """Enrollment page for mentorship program"""
     if request.method == 'POST':
-        # Handle enrollment form submission
         full_name = request.form.get('fullName')
         email = request.form.get('email')
         phone = request.form.get('phone')
         education = request.form.get('education')
         
-        # Check if user is logged in
         if current_user.is_authenticated:
             user_id = current_user.id
         else:
-            # Check if user exists with this email
             user = User.query.filter_by(email=email).first()
             if user:
                 user_id = user.id
             else:
-                # Create a temporary user record
                 username = email.split('@')[0]
-                # Ensure username is unique
                 counter = 1
                 original_username = username
                 while User.query.filter_by(username=username).first():
@@ -473,7 +439,6 @@ def enroll():
                 db.session.commit()
                 user_id = user.id
         
-        # Save enrollment record
         enrollment_data = {
             'full_name': full_name,
             'phone': phone,
@@ -501,12 +466,12 @@ def process_payment(booking_id):
     """Process payment for a booking"""
     booking = Booking.query.get_or_404(booking_id)
     
-    # Check if current user is the learner
     if booking.learner_id != current_user.id:
         return jsonify({'success': False, 'message': 'Unauthorized'}), 403
     
-    # Update booking status
     booking.status = 'Paid'
+    # Generate meeting link
+    booking.meeting_link = f"https://meet.google.com/new?date={booking.booking_date}&time={booking.booking_time}"
     db.session.commit()
     
     return jsonify({'success': True, 'message': 'Payment processed successfully'})
@@ -517,22 +482,18 @@ def process_enrollment_payment(enrollment_id):
     """Process payment for enrollment"""
     enrollment = Enrollment.query.get_or_404(enrollment_id)
     
-    # Check if current user owns this enrollment
     if enrollment.user_id != current_user.id:
         return jsonify({'success': False, 'message': 'Unauthorized'}), 403
     
-    # Update enrollment payment status
     enrollment.payment_status = 'completed'
     db.session.commit()
     
     return jsonify({'success': True, 'message': 'Payment completed successfully'})
 
-# Optional: Add edit profile route
 @app.route('/edit-profile', methods=['GET', 'POST'])
 @login_required
 def edit_profile():
     if request.method == 'POST':
-        # Handle profile updates
         if current_user.role == 'mentor':
             current_user.full_name = request.form.get('full_name')
             current_user.domain = request.form.get('domain')
@@ -545,29 +506,24 @@ def edit_profile():
         return redirect(url_for('dashboard'))
     
     return render_template('edit_profile.html')
-    
+
 @app.route('/process-enrollment', methods=['POST'])
 def process_enrollment():
     """API endpoint to process enrollment (for AJAX)"""
     try:
         data = request.get_json()
         
-        # Extract data
         full_name = data.get('fullName')
         email = data.get('email')
         phone = data.get('phone')
         education = data.get('education')
         
-        # Validation
         if not all([full_name, email, phone]):
             return jsonify({'success': False, 'message': 'All fields are required'}), 400
         
-        # Create user account if email doesn't exist
         existing_user = User.query.filter_by(email=email).first()
         if not existing_user:
-            # Create new user
             username = email.split('@')[0]
-            # Ensure username is unique
             counter = 1
             original_username = username
             while User.query.filter_by(username=username).first():
@@ -586,7 +542,6 @@ def process_enrollment():
         else:
             user_id = existing_user.id
         
-        # Save enrollment
         enrollment_data = {
             'full_name': full_name,
             'phone': phone,
@@ -649,23 +604,26 @@ def mentor_detail(id):
         flash('User is not a mentor')
         return redirect(url_for('explore'))
     
-    # Basic slots logic
-    slots = ["10:00 AM", "11:00 AM", "2:00 PM", "3:00 PM", "5:00 PM", "6:00 PM"]
+    today = date.today().isoformat()
     
-    # Remove slots that are already booked for this mentor
-    booked_slots = [b.slot_time for b in Booking.query.filter_by(mentor_id=id).all()]
-    available_slots = [s for s in slots if s not in booked_slots]
-
     if request.method == 'POST':
         if not current_user.is_authenticated:
             flash('Please login to book a session')
             return redirect(url_for('login'))
             
         service = request.form.get('service')
-        slot = request.form.get('slot')
+        booking_date = request.form.get('booking_date')
+        booking_time = request.form.get('booking_time')
+        duration = request.form.get('duration', 60)
         
-        # Check if slot is still available
-        if slot not in available_slots:
+        # Check if slot is available
+        existing_booking = Booking.query.filter_by(
+            mentor_id=id, 
+            booking_date=datetime.strptime(booking_date, '%Y-%m-%d').date(),
+            booking_time=booking_time
+        ).first()
+        
+        if existing_booking:
             flash('Selected slot is no longer available')
             return redirect(url_for('mentor_detail', id=id))
         
@@ -673,20 +631,69 @@ def mentor_detail(id):
         booking = Booking(
             mentor_id=id, 
             learner_id=current_user.id, 
-            service_name=service, 
-            slot_time=slot, 
-            status='Paid'
+            service_name=service,
+            booking_date=datetime.strptime(booking_date, '%Y-%m-%d').date(),
+            booking_time=booking_time,
+            duration=int(duration),
+            status='Pending'
         )
         db.session.add(booking)
         db.session.commit()
         
-        flash('Booking Confirmed! Payment Successful.')
+        flash('Booking Request Sent! Please complete payment.')
         return redirect(url_for('dashboard'))
-
+    
+    # Get booked slots for the next 7 days
+    next_week = date.today() + timedelta(days=7)
+    booked_slots = Booking.query.filter(
+        Booking.mentor_id == id,
+        Booking.booking_date >= date.today(),
+        Booking.booking_date <= next_week
+    ).all()
+    
+    booked_times = [f"{b.booking_time}" for b in booked_slots]
+    available_slots = ["09:00", "10:00", "11:00", "12:00", "14:00", "15:00", "16:00", "17:00"]
+    
     # Parse services
     services = [s.strip() for s in mentor.services.split(',')] if mentor.services else []
     
-    return render_template('mentor_detail.html', mentor=mentor, slots=available_slots, services=services)
+    return render_template('mentor_detail.html', 
+                         mentor=mentor, 
+                         available_slots=available_slots,
+                         booked_times=booked_times,
+                         services=services,
+                         today=today)
+
+@app.route('/mentor/profile/<int:id>')
+def mentor_public_profile(id):
+    """Public profile page for mentors (like LinkedIn)"""
+    mentor = User.query.get_or_404(id)
+    if mentor.role != 'mentor':
+        flash('User is not a mentor')
+        return redirect(url_for('explore'))
+    
+    # Increment profile views
+    mentor.profile_views += 1
+    db.session.commit()
+    
+    # Get mentor stats
+    total_bookings = Booking.query.filter_by(mentor_id=id).count()
+    
+    return render_template('mentor_public_profile.html', 
+                         mentor=mentor, 
+                         total_bookings=total_bookings)
+
+@app.route('/profile/link')
+@login_required
+def manage_profile_link():
+    """Manage mentor's public profile link"""
+    if current_user.role != 'mentor':
+        flash('Only mentors can manage profile links')
+        return redirect(url_for('dashboard'))
+    
+    bookings = Booking.query.filter_by(mentor_id=current_user.id).all()
+    
+    return render_template('manage_profile_link.html', bookings=bookings)
 
 @app.route('/dashboard')
 @login_required
@@ -699,7 +706,7 @@ def dashboard():
         
         # Get recent bookings with mentor names
         recent_bookings = []
-        bookings = Booking.query.limit(5).all()
+        bookings = Booking.query.order_by(Booking.created_at.desc()).limit(5).all()
         for booking in bookings:
             mentor = User.query.get(booking.mentor_id)
             learner = User.query.get(booking.learner_id)
@@ -707,7 +714,9 @@ def dashboard():
                 'mentor_name': mentor.username if mentor else 'Unknown',
                 'learner_name': learner.username if learner else 'Unknown',
                 'service_name': booking.service_name,
-                'slot_time': booking.slot_time,
+                'booking_date': booking.booking_date,
+                'booking_time': booking.booking_time,
+                'duration': booking.duration,
                 'amount': mentor.price if mentor else 0,
                 'status': booking.status,
                 'created_at': booking.created_at.strftime('%b %d, %Y') if booking.created_at else 'N/A'
@@ -721,8 +730,7 @@ def dashboard():
                              recent_bookings=recent_bookings)
     
     elif current_user.role == 'mentor':
-        my_bookings = Booking.query.filter_by(mentor_id=current_user.id).all()
-        # Get learner names for bookings
+        my_bookings = Booking.query.filter_by(mentor_id=current_user.id).order_by(Booking.booking_date, Booking.booking_time).all()
         bookings_with_learners = []
         for booking in my_bookings:
             learner = User.query.get(booking.learner_id)
@@ -733,7 +741,7 @@ def dashboard():
         return render_template('dashboard.html', bookings=bookings_with_learners, type='mentor')
         
     else:  # Learner
-        my_bookings = Booking.query.filter_by(learner_id=current_user.id).all()
+        my_bookings = Booking.query.filter_by(learner_id=current_user.id).order_by(Booking.booking_date, Booking.booking_time).all()
         bookings_with_mentors = []
         for booking in my_bookings:
             mentor = User.query.get(booking.mentor_id)
@@ -777,7 +785,6 @@ def reject_mentor(id):
     if mentor.role != 'mentor':
         return jsonify({'success': False, 'message': 'User is not a mentor'}), 400
     
-    # Delete the mentor application (or mark as rejected)
     db.session.delete(mentor)
     db.session.commit()
     
@@ -811,11 +818,11 @@ def debug_paths():
         
     return output
 
-# Create DB on first run - with error handling for existing columns
+# Create DB on first run
 with app.app_context():
     try:
         db.create_all()
-        # Try to add admin user
+        # Add admin user if not exists
         if not User.query.filter_by(username='admin').first():
             admin = User(username='admin', email='admin@clearq.in', role='admin')
             admin.set_password('admin123')
@@ -823,9 +830,7 @@ with app.app_context():
             db.session.commit()
             print("Database and admin user created successfully")
     except Exception as e:
-        print(f"Database initialization error (may be expected if tables exist): {e}")
-        # Continue anyway - the app might still work
+        print(f"Database initialization error: {e}")
 
 if __name__ == '__main__':
     app.run(debug=True)
-
