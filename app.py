@@ -1,7 +1,9 @@
 import os
 import json
 import random
-from datetime import datetime
+import uuid
+import re
+from datetime import datetime, date, time, timedelta
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
@@ -35,7 +37,12 @@ class User(UserMixin, db.Model):
     email = db.Column(db.String(100), unique=True, nullable=False)
     password_hash = db.Column(db.String(200))
     role = db.Column(db.String(20), default='learner')  # 'learner', 'mentor', 'admin'
-    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=True)  # Make nullable for existing DB
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=True)
+    
+    # Profile Link Fields
+    profile_slug = db.Column(db.String(100), unique=True, nullable=True)
+    profile_views = db.Column(db.Integer, default=0)
+    is_profile_public = db.Column(db.Boolean, default=True)
     
     # Mentor Specific Fields
     full_name = db.Column(db.String(100), nullable=True)
@@ -46,7 +53,7 @@ class User(UserMixin, db.Model):
     experience = db.Column(db.String(50), nullable=True)
     skills = db.Column(db.Text, nullable=True)
     services = db.Column(db.Text, nullable=True)  # Resume Review, Mock Interview
-    bio = db.Column(db.Text, nullable=True)  # Used for AI matching
+    bio = db.Column(db.Text, nullable=True)
     price = db.Column(db.Integer, default=0, nullable=True)
     availability = db.Column(db.String(50), nullable=True)
     is_verified = db.Column(db.Boolean, default=False)
@@ -74,15 +81,41 @@ class Booking(db.Model):
     mentor_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     learner_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     service_name = db.Column(db.String(100))
-    slot_time = db.Column(db.String(50))
-    status = db.Column(db.String(20), default='Pending')  # Pending, Paid, Completed
+    booking_date = db.Column(db.Date, nullable=False)  # Date of booking
+    booking_time = db.Column(db.String(50), nullable=False)  # Time slot
+    slot_datetime = db.Column(db.DateTime, nullable=True)  # Combined datetime for sorting
+    status = db.Column(db.String(20), default='Pending')  # Pending, Paid, Completed, Cancelled
     created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=True)
+    meeting_link = db.Column(db.String(500), nullable=True)  # Google Meet/Zoom link
+    notes = db.Column(db.Text, nullable=True)  # Additional notes
+    
+    # Relationships
+    mentor = db.relationship('User', foreign_keys=[mentor_id])
+    learner = db.relationship('User', foreign_keys=[learner_id])
 
 @login_manager.user_loader
 def load_user(user_id):
     return User.query.get(int(user_id))
 
-# --- AI ENGINE (No API) ---
+# --- PROFILE LINK HELPER FUNCTIONS ---
+def generate_profile_slug(full_name):
+    """
+    Generate a URL-friendly slug from full name
+    Example: John Doe -> john_doe
+    """
+    if not full_name:
+        return str(uuid.uuid4())[:8]
+    
+    # Convert to lowercase and replace spaces with underscores
+    slug = full_name.lower().strip()
+    slug = re.sub(r'[^\w\s-]', '', slug)  # Remove special chars
+    slug = re.sub(r'[-\s]+', '_', slug)   # Replace spaces and hyphens with underscores
+    
+    # Add random string to ensure uniqueness
+    slug = f"{slug}_{str(uuid.uuid4())[:4]}"
+    return slug
+
+# --- AI ENGINE ---
 def get_ai_recommendations(user_goal):
     """
     Uses Scikit-Learn to find mentors whose bios/domains match the user's goal.
@@ -128,13 +161,13 @@ def get_ai_recommendations(user_goal):
         print(f"AI Error: {e}")
         return []
 
+# --- TEMPLATE FILTERS ---
 @app.template_filter('escapejs')
 def escapejs_filter(value):
     """Escape strings for JavaScript - similar to Django's escapejs"""
     if value is None:
         return ''
     
-    # Basic escaping for JavaScript strings
     value = str(value)
     replacements = {
         '\\': '\\\\',
@@ -160,6 +193,36 @@ def from_json_filter(value):
         return json.loads(value)
     except:
         return {}
+
+@app.template_filter('format_date')
+def format_date_filter(value):
+    """Format date in templates"""
+    if not value:
+        return ''
+    if isinstance(value, str):
+        try:
+            value = datetime.strptime(value, '%Y-%m-%d')
+        except:
+            return value
+    return value.strftime('%b %d, %Y')
+
+@app.template_filter('format_time')
+def format_time_filter(value):
+    """Format time in templates"""
+    if not value:
+        return ''
+    # Convert string time to formatted time
+    try:
+        if ':' in value:
+            hour = int(value.split(':')[0])
+            minute = value.split(':')[1]
+            am_pm = 'AM' if hour < 12 else 'PM'
+            hour = hour if hour <= 12 else hour - 12
+            hour = 12 if hour == 0 else hour
+            return f"{hour}:{minute} {am_pm}"
+    except:
+        pass
+    return value
 
 # --- DEBUG ROUTES ---
 @app.route('/check-data')
@@ -267,7 +330,8 @@ def add_sample_mentors():
                 bio=data['bio'],
                 price=data['price'],
                 availability=data['availability'],
-                is_verified=data['is_verified']
+                is_verified=data['is_verified'],
+                profile_slug=generate_profile_slug(data['full_name'])
             )
             mentor.set_password(data['password'])
             db.session.add(mentor)
@@ -277,7 +341,92 @@ def add_sample_mentors():
     
     return f"Added {added_count} sample mentors! <a href='/explore'>Go to Explore</a>"
 
-# --- ROUTES ---
+# --- PROFILE LINK ROUTES ---
+@app.route('/mentor/public/<profile_slug>')
+def mentor_public_profile(profile_slug):
+    """
+    Public profile page accessible via unique link
+    Similar to LinkedIn public profile
+    """
+    mentor = User.query.filter_by(profile_slug=profile_slug, role='mentor').first_or_404()
+    
+    # Increment profile views
+    mentor.profile_views += 1
+    db.session.commit()
+    
+    # Check if profile is public
+    if not mentor.is_profile_public:
+        flash('This profile is not publicly available.')
+        return redirect(url_for('index'))
+    
+    # Get mentor stats
+    total_sessions = Booking.query.filter_by(mentor_id=mentor.id).count()
+    
+    # Parse services
+    services = [s.strip() for s in mentor.services.split(',')] if mentor.services else []
+    
+    return render_template('mentor_public_profile.html', 
+                         mentor=mentor, 
+                         services=services,
+                         total_sessions=total_sessions)
+
+@app.route('/profile/link', methods=['GET', 'POST'])
+@login_required
+def manage_profile_link():
+    """
+    Let mentors manage their public profile link
+    """
+    if current_user.role != 'mentor':
+        flash('Only mentors can manage profile links')
+        return redirect(url_for('dashboard'))
+    
+    # Generate initial slug if doesn't exist
+    if not current_user.profile_slug:
+        current_user.profile_slug = generate_profile_slug(current_user.full_name or current_user.username)
+        db.session.commit()
+    
+    if request.method == 'POST':
+        action = request.form.get('action')
+        
+        if action == 'regenerate':
+            # Generate new unique slug
+            current_user.profile_slug = generate_profile_slug(current_user.full_name or current_user.username)
+            flash('New profile link generated!')
+            
+        elif action == 'toggle_visibility':
+            current_user.is_profile_public = not current_user.is_profile_public
+            status = "public" if current_user.is_profile_public else "private"
+            flash(f'Profile is now {status}')
+            
+        elif action == 'customize':
+            custom_slug = request.form.get('custom_slug', '').strip()
+            if custom_slug:
+                # Validate slug format
+                if re.match(r'^[a-z0-9_]+$', custom_slug):
+                    # Check if slug is available
+                    existing = User.query.filter_by(profile_slug=custom_slug).first()
+                    if not existing or existing.id == current_user.id:
+                        current_user.profile_slug = custom_slug
+                        flash('Custom profile link updated!')
+                    else:
+                        flash('This link is already taken. Please choose another.')
+                else:
+                    flash('Invalid format. Use only lowercase letters, numbers, and underscores.')
+        
+        db.session.commit()
+        return redirect(url_for('manage_profile_link'))
+    
+    # Build full URL for sharing
+    base_url = request.host_url.rstrip('/')
+    profile_url = f"{base_url}/mentor/public/{current_user.profile_slug}"
+    
+    return render_template('manage_profile_link.html', 
+                         profile_url=profile_url,
+                         profile_slug=current_user.profile_slug,
+                         is_public=current_user.is_profile_public,
+                         profile_views=current_user.profile_views)
+
+# --- MAIN ROUTES ---
 
 @app.route('/')
 def index():
@@ -288,16 +437,11 @@ def explore():
     recommendations = []
     query = ""
     
-    # Debug logging
-    print("=== EXPLORE ROUTE ===")
-    
     if request.method == 'POST':
         query = request.form.get('goal')
-        print(f"Search query: {query}")
         if query:
             try:
                 recommendations = get_ai_recommendations(query)
-                print(f"AI found {len(recommendations)} recommendations")
             except Exception as e:
                 print(f"AI error: {e}")
                 # Fallback: simple text matching
@@ -309,11 +453,6 @@ def explore():
     
     # Get all verified mentors
     all_mentors = User.query.filter_by(role='mentor', is_verified=True).all()
-    
-    # Debug logging
-    print(f"Total verified mentors: {len(all_mentors)}")
-    for mentor in all_mentors:
-        print(f"  - {mentor.username}: {mentor.domain}")
     
     return render_template('mentors.html', 
                          mentors=all_mentors, 
@@ -407,7 +546,8 @@ def register():
                 bio=bio,
                 price=int(price) if price else 0,
                 availability=availability,
-                is_verified=False
+                is_verified=False,
+                profile_slug=generate_profile_slug(full_name)
             )
             user.set_password(password)
             db.session.add(user)
@@ -478,6 +618,248 @@ def enroll():
     
     return render_template('enroll.html')
 
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        email = request.form.get('email')
+        password = request.form.get('password')
+        user = User.query.filter_by(email=email).first()
+        
+        if user and user.check_password(password):
+            login_user(user)
+            flash('Login successful!')
+            return redirect(url_for('index'))
+        flash('Invalid credentials')
+    return render_template('login.html')
+
+@app.route('/logout')
+@login_required
+def logout():
+    logout_user()
+    flash('You have been logged out.')
+    return redirect(url_for('index'))
+
+@app.route('/mentor/<int:id>', methods=['GET', 'POST'])
+def mentor_detail(id):
+    mentor = User.query.get_or_404(id)
+    if mentor.role != 'mentor':
+        flash('User is not a mentor')
+        return redirect(url_for('explore'))
+    
+    # Generate profile slug if missing
+    if not mentor.profile_slug:
+        mentor.profile_slug = generate_profile_slug(mentor.full_name or mentor.username)
+        db.session.commit()
+    
+    # Generate available slots for next 7 days
+    today = date.today()
+    available_slots = []
+    
+    for day_offset in range(1, 8):  # Next 7 days
+        slot_date = today + timedelta(days=day_offset)
+        
+        # Skip weekends if mentor only works weekdays
+        if 'weekend' in mentor.availability.lower() and slot_date.weekday() >= 5:
+            continue
+        if 'weekday' in mentor.availability.lower() and slot_date.weekday() >= 5:
+            continue
+        
+        # Generate time slots
+        time_slots = ["09:00", "10:00", "11:00", "14:00", "15:00", "16:00", "17:00", "18:00"]
+        
+        for time_slot in time_slots:
+            # Check if slot is already booked
+            existing_booking = Booking.query.filter_by(
+                mentor_id=id,
+                booking_date=slot_date,
+                booking_time=time_slot,
+                status__in=['Pending', 'Paid', 'Completed']
+            ).first()
+            
+            if not existing_booking:
+                # Create datetime object for sorting
+                slot_datetime = datetime.combine(slot_date, datetime.strptime(time_slot, "%H:%M").time())
+                
+                available_slots.append({
+                    'date': slot_date,
+                    'time': time_slot,
+                    'datetime': slot_datetime,
+                    'display_date': slot_date.strftime('%A, %b %d'),
+                    'display_time': datetime.strptime(time_slot, "%H:%M").strftime("%I:%M %p")
+                })
+    
+    # Sort slots by datetime
+    available_slots.sort(key=lambda x: x['datetime'])
+    
+    if request.method == 'POST':
+        if not current_user.is_authenticated:
+            flash('Please login to book a session')
+            return redirect(url_for('login'))
+            
+        service = request.form.get('service')
+        selected_date = request.form.get('date')
+        selected_time = request.form.get('time')
+        notes = request.form.get('notes')
+        
+        # Check if slot is still available
+        slot_booked = Booking.query.filter_by(
+            mentor_id=id,
+            booking_date=datetime.strptime(selected_date, '%Y-%m-%d').date(),
+            booking_time=selected_time,
+            status__in=['Pending', 'Paid']
+        ).first()
+        
+        if slot_booked:
+            flash('Selected slot is no longer available')
+            return redirect(url_for('mentor_detail', id=id))
+        
+        # Create combined datetime
+        slot_datetime = datetime.combine(
+            datetime.strptime(selected_date, '%Y-%m-%d').date(),
+            datetime.strptime(selected_time, "%H:%M").time()
+        )
+        
+        # Generate Google Meet link
+        meeting_id = str(uuid.uuid4())[:8]
+        meeting_link = f"https://meet.google.com/{meeting_id}"
+        
+        # Create booking
+        booking = Booking(
+            mentor_id=id, 
+            learner_id=current_user.id, 
+            service_name=service, 
+            booking_date=datetime.strptime(selected_date, '%Y-%m-%d').date(),
+            booking_time=selected_time,
+            slot_datetime=slot_datetime,
+            meeting_link=meeting_link,
+            notes=notes,
+            status='Pending'
+        )
+        db.session.add(booking)
+        db.session.commit()
+        
+        flash('Booking created successfully! Please complete payment.')
+        return redirect(url_for('dashboard'))
+
+    # Parse services
+    services = [s.strip() for s in mentor.services.split(',')] if mentor.services else []
+    
+    return render_template('mentor_detail.html', 
+                         mentor=mentor, 
+                         slots=available_slots, 
+                         services=services,
+                         today=today.strftime('%Y-%m-%d'))
+
+@app.route('/dashboard')
+@login_required
+def dashboard():
+    if current_user.role == 'admin':
+        pending_mentors = User.query.filter_by(role='mentor', is_verified=False).all()
+        total_users = User.query.count()
+        verified_mentors = User.query.filter_by(role='mentor', is_verified=True).count()
+        total_bookings = Booking.query.count()
+        
+        # Get recent bookings with mentor names
+        recent_bookings = []
+        bookings = Booking.query.order_by(Booking.slot_datetime.desc()).limit(10).all()
+        for booking in bookings:
+            mentor = User.query.get(booking.mentor_id)
+            learner = User.query.get(booking.learner_id)
+            recent_bookings.append({
+                'id': booking.id,
+                'mentor_name': mentor.full_name if mentor and mentor.full_name else mentor.username,
+                'learner_name': learner.username if learner else 'Unknown',
+                'service_name': booking.service_name,
+                'date': booking.booking_date,
+                'time': booking.booking_time,
+                'datetime': booking.slot_datetime,
+                'amount': mentor.price if mentor else 0,
+                'status': booking.status,
+                'meeting_link': booking.meeting_link,
+                'created_at': booking.created_at.strftime('%b %d, %Y') if booking.created_at else 'N/A'
+            })
+        
+        # Get upcoming bookings (next 7 days)
+        upcoming_date = date.today()
+        end_date = upcoming_date + timedelta(days=7)
+        upcoming_bookings = Booking.query.filter(
+            Booking.booking_date >= upcoming_date,
+            Booking.booking_date <= end_date
+        ).order_by(Booking.booking_date, Booking.booking_time).all()
+        
+        return render_template('admin.html', 
+                             pending_mentors=pending_mentors,
+                             total_users=total_users,
+                             verified_mentors=verified_mentors,
+                             total_bookings=total_bookings,
+                             recent_bookings=recent_bookings,
+                             upcoming_bookings=upcoming_bookings)
+    
+    elif current_user.role == 'mentor':
+        # Get all bookings for this mentor
+        all_bookings = Booking.query.filter_by(mentor_id=current_user.id).order_by(
+            Booking.slot_datetime.desc()
+        ).all()
+        
+        # Get upcoming bookings (future dates)
+        today = date.today()
+        upcoming_bookings = []
+        past_bookings = []
+        
+        for booking in all_bookings:
+            learner = User.query.get(booking.learner_id)
+            booking_info = {
+                'booking': booking,
+                'learner': learner
+            }
+            
+            if booking.booking_date >= today:
+                upcoming_bookings.append(booking_info)
+            else:
+                past_bookings.append(booking_info)
+        
+        # Get earnings data
+        total_earnings = sum([current_user.price for booking in all_bookings if booking.status == 'Paid'])
+        
+        # Generate profile URL for sharing
+        profile_url = f"{request.host_url.rstrip('/')}/mentor/public/{current_user.profile_slug}"
+        
+        return render_template('dashboard.html', 
+                             upcoming_bookings=upcoming_bookings,
+                             past_bookings=past_bookings,
+                             total_earnings=total_earnings,
+                             profile_url=profile_url,
+                             type='mentor')
+        
+    else:  # Learner
+        # Get all bookings for this learner
+        all_bookings = Booking.query.filter_by(learner_id=current_user.id).order_by(
+            Booking.slot_datetime.desc()
+        ).all()
+        
+        # Get upcoming bookings (future dates)
+        today = date.today()
+        upcoming_bookings = []
+        past_bookings = []
+        
+        for booking in all_bookings:
+            mentor = User.query.get(booking.mentor_id)
+            booking_info = {
+                'booking': booking,
+                'mentor': mentor
+            }
+            
+            if booking.booking_date >= today:
+                upcoming_bookings.append(booking_info)
+            else:
+                past_bookings.append(booking_info)
+        
+        return render_template('dashboard.html', 
+                             upcoming_bookings=upcoming_bookings,
+                             past_bookings=past_bookings,
+                             type='learner')
+
+# --- PAYMENT ROUTES ---
 @app.route('/process-payment/<int:booking_id>', methods=['POST'])
 @login_required
 def process_payment(booking_id):
@@ -510,222 +892,7 @@ def process_enrollment_payment(enrollment_id):
     
     return jsonify({'success': True, 'message': 'Payment completed successfully'})
 
-# Optional: Add edit profile route
-@app.route('/edit-profile', methods=['GET', 'POST'])
-@login_required
-def edit_profile():
-    if request.method == 'POST':
-        # Handle profile updates
-        if current_user.role == 'mentor':
-            current_user.full_name = request.form.get('full_name')
-            current_user.domain = request.form.get('domain')
-            current_user.price = int(request.form.get('price')) if request.form.get('price') else 0
-            current_user.bio = request.form.get('bio')
-            current_user.availability = request.form.get('availability')
-        
-        db.session.commit()
-        flash('Profile updated successfully!')
-        return redirect(url_for('dashboard'))
-    
-    return render_template('edit_profile.html')
-    
-@app.route('/process-enrollment', methods=['POST'])
-def process_enrollment():
-    """API endpoint to process enrollment (for AJAX)"""
-    try:
-        data = request.get_json()
-        
-        # Extract data
-        full_name = data.get('fullName')
-        email = data.get('email')
-        phone = data.get('phone')
-        education = data.get('education')
-        
-        # Validation
-        if not all([full_name, email, phone]):
-            return jsonify({'success': False, 'message': 'All fields are required'}), 400
-        
-        # Create user account if email doesn't exist
-        existing_user = User.query.filter_by(email=email).first()
-        if not existing_user:
-            # Create new user
-            username = email.split('@')[0]
-            # Ensure username is unique
-            counter = 1
-            original_username = username
-            while User.query.filter_by(username=username).first():
-                username = f"{original_username}_{counter}"
-                counter += 1
-            
-            user = User(
-                username=username,
-                email=email,
-                role='learner'
-            )
-            user.set_password('temp123')
-            db.session.add(user)
-            db.session.commit()
-            user_id = user.id
-        else:
-            user_id = existing_user.id
-        
-        # Save enrollment
-        enrollment_data = {
-            'full_name': full_name,
-            'phone': phone,
-            'education': education
-        }
-        
-        enrollment = Enrollment(
-            user_id=user_id,
-            program_name='career_mentorship',
-            payment_status='pending',
-            payment_amount=499,
-            additional_data=json.dumps(enrollment_data)
-        )
-        db.session.add(enrollment)
-        db.session.commit()
-        
-        return jsonify({
-            'success': True,
-            'message': 'Enrollment successful! Check your email for confirmation.'
-        })
-        
-    except Exception as e:
-        return jsonify({'success': False, 'message': str(e)}), 500
-
-@app.route('/mentorship-program')
-def mentorship_program():
-    """Main mentorship program landing page"""
-    stats = {
-        'success_rate': '95%',
-        'students_enrolled': '2000+',
-        'completion_rate': '89%'
-    }
-    return render_template('mentorship_program.html', stats=stats)
-
-@app.route('/login', methods=['GET', 'POST'])
-def login():
-    if request.method == 'POST':
-        email = request.form.get('email')
-        password = request.form.get('password')
-        user = User.query.filter_by(email=email).first()
-        
-        if user and user.check_password(password):
-            login_user(user)
-            flash('Login successful!')
-            return redirect(url_for('index'))
-        flash('Invalid credentials')
-    return render_template('login.html')
-
-@app.route('/logout')
-@login_required
-def logout():
-    logout_user()
-    flash('You have been logged out.')
-    return redirect(url_for('index'))
-
-@app.route('/mentor/<int:id>', methods=['GET', 'POST'])
-def mentor_detail(id):
-    mentor = User.query.get_or_404(id)
-    if mentor.role != 'mentor':
-        flash('User is not a mentor')
-        return redirect(url_for('explore'))
-    
-    # Basic slots logic
-    slots = ["10:00 AM", "11:00 AM", "2:00 PM", "3:00 PM", "5:00 PM", "6:00 PM"]
-    
-    # Remove slots that are already booked for this mentor
-    booked_slots = [b.slot_time for b in Booking.query.filter_by(mentor_id=id).all()]
-    available_slots = [s for s in slots if s not in booked_slots]
-
-    if request.method == 'POST':
-        if not current_user.is_authenticated:
-            flash('Please login to book a session')
-            return redirect(url_for('login'))
-            
-        service = request.form.get('service')
-        slot = request.form.get('slot')
-        
-        # Check if slot is still available
-        if slot not in available_slots:
-            flash('Selected slot is no longer available')
-            return redirect(url_for('mentor_detail', id=id))
-        
-        # Create booking
-        booking = Booking(
-            mentor_id=id, 
-            learner_id=current_user.id, 
-            service_name=service, 
-            slot_time=slot, 
-            status='Paid'
-        )
-        db.session.add(booking)
-        db.session.commit()
-        
-        flash('Booking Confirmed! Payment Successful.')
-        return redirect(url_for('dashboard'))
-
-    # Parse services
-    services = [s.strip() for s in mentor.services.split(',')] if mentor.services else []
-    
-    return render_template('mentor_detail.html', mentor=mentor, slots=available_slots, services=services)
-
-@app.route('/dashboard')
-@login_required
-def dashboard():
-    if current_user.role == 'admin':
-        pending_mentors = User.query.filter_by(role='mentor', is_verified=False).all()
-        total_users = User.query.count()
-        verified_mentors = User.query.filter_by(role='mentor', is_verified=True).count()
-        total_bookings = Booking.query.count()
-        
-        # Get recent bookings with mentor names
-        recent_bookings = []
-        bookings = Booking.query.limit(5).all()
-        for booking in bookings:
-            mentor = User.query.get(booking.mentor_id)
-            learner = User.query.get(booking.learner_id)
-            recent_bookings.append({
-                'mentor_name': mentor.username if mentor else 'Unknown',
-                'learner_name': learner.username if learner else 'Unknown',
-                'service_name': booking.service_name,
-                'slot_time': booking.slot_time,
-                'amount': mentor.price if mentor else 0,
-                'status': booking.status,
-                'created_at': booking.created_at.strftime('%b %d, %Y') if booking.created_at else 'N/A'
-            })
-        
-        return render_template('admin.html', 
-                             pending_mentors=pending_mentors,
-                             total_users=total_users,
-                             verified_mentors=verified_mentors,
-                             total_bookings=total_bookings,
-                             recent_bookings=recent_bookings)
-    
-    elif current_user.role == 'mentor':
-        my_bookings = Booking.query.filter_by(mentor_id=current_user.id).all()
-        # Get learner names for bookings
-        bookings_with_learners = []
-        for booking in my_bookings:
-            learner = User.query.get(booking.learner_id)
-            bookings_with_learners.append({
-                'booking': booking,
-                'learner': learner
-            })
-        return render_template('dashboard.html', bookings=bookings_with_learners, type='mentor')
-        
-    else:  # Learner
-        my_bookings = Booking.query.filter_by(learner_id=current_user.id).all()
-        bookings_with_mentors = []
-        for booking in my_bookings:
-            mentor = User.query.get(booking.mentor_id)
-            bookings_with_mentors.append({
-                'booking': booking,
-                'mentor': mentor
-            })
-        return render_template('dashboard.html', bookings=bookings_with_mentors, type='learner')
-
+# --- ADMIN ROUTES ---
 @app.route('/verify/<int:id>')
 @login_required
 def verify_mentor(id):
@@ -766,7 +933,72 @@ def reject_mentor(id):
     
     return jsonify({'success': True, 'message': 'Mentor application rejected'})
 
-# DEBUG ROUTE
+# --- BOOKING MANAGEMENT ROUTES ---
+@app.route('/update-booking-status/<int:booking_id>', methods=['POST'])
+@login_required
+def update_booking_status(booking_id):
+    """Update booking status (Complete/Cancel)"""
+    booking = Booking.query.get_or_404(booking_id)
+    
+    # Check authorization
+    if current_user.role == 'mentor' and booking.mentor_id != current_user.id:
+        return jsonify({'success': False, 'message': 'Unauthorized'}), 403
+    elif current_user.role == 'learner' and booking.learner_id != current_user.id:
+        return jsonify({'success': False, 'message': 'Unauthorized'}), 403
+    elif current_user.role != 'admin':
+        return jsonify({'success': False, 'message': 'Unauthorized'}), 403
+    
+    data = request.get_json()
+    new_status = data.get('status')
+    
+    if new_status in ['Completed', 'Cancelled']:
+        booking.status = new_status
+        db.session.commit()
+        return jsonify({'success': True, 'message': f'Booking marked as {new_status}'})
+    
+    return jsonify({'success': False, 'message': 'Invalid status'}), 400
+
+@app.route('/update-meeting-link/<int:booking_id>', methods=['POST'])
+@login_required
+def update_meeting_link(booking_id):
+    """Update meeting link (mentor only)"""
+    booking = Booking.query.get_or_404(booking_id)
+    
+    # Check if current user is the mentor
+    if booking.mentor_id != current_user.id:
+        return jsonify({'success': False, 'message': 'Unauthorized'}), 403
+    
+    data = request.get_json()
+    meeting_link = data.get('meeting_link')
+    
+    if meeting_link:
+        booking.meeting_link = meeting_link
+        db.session.commit()
+        return jsonify({'success': True, 'message': 'Meeting link updated'})
+    
+    return jsonify({'success': False, 'message': 'Invalid link'}), 400
+
+# --- PROFILE LINK API ---
+@app.route('/copy-profile-link', methods=['POST'])
+@login_required
+def copy_profile_link():
+    """AJAX endpoint to get profile link for copying"""
+    if current_user.role != 'mentor':
+        return jsonify({'success': False, 'message': 'Unauthorized'}), 403
+    
+    if not current_user.profile_slug:
+        current_user.profile_slug = generate_profile_slug(current_user.full_name or current_user.username)
+        db.session.commit()
+    
+    profile_url = f"{request.host_url.rstrip('/')}/mentor/public/{current_user.profile_slug}"
+    
+    return jsonify({
+        'success': True,
+        'profile_url': profile_url,
+        'message': 'Profile link copied to clipboard!'
+    })
+
+# --- DEBUG ROUTE ---
 @app.route('/debug')
 def debug_paths():
     output = "<h2>Current Directory Files:</h2>"
@@ -794,7 +1026,18 @@ def debug_paths():
         
     return output
 
-# Create DB on first run - with error handling for existing columns
+# --- MENTORSHIP PROGRAM ROUTE ---
+@app.route('/mentorship-program')
+def mentorship_program():
+    """Main mentorship program landing page"""
+    stats = {
+        'success_rate': '95%',
+        'students_enrolled': '2000+',
+        'completion_rate': '89%'
+    }
+    return render_template('mentorship_program.html', stats=stats)
+
+# Create DB on first run
 with app.app_context():
     try:
         db.create_all()
@@ -806,8 +1049,7 @@ with app.app_context():
             db.session.commit()
             print("Database and admin user created successfully")
     except Exception as e:
-        print(f"Database initialization error (may be expected if tables exist): {e}")
-        # Continue anyway - the app might still work
+        print(f"Database initialization error: {e}")
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=True, port=5001)
