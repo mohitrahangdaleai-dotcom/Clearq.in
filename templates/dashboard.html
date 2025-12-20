@@ -5,101 +5,207 @@
     <h1 class="text-3xl font-bold mb-8">My Dashboard</h1>
 
     {% if type == 'learner' %}
+        <!-- Learner Stats -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            <div class="bg-gradient-to-r from-blue-50 to-blue-100 p-6 rounded-xl border border-blue-200">
+                <h3 class="font-bold text-lg text-blue-800">Upcoming Sessions</h3>
+                <p class="text-3xl font-bold text-gray-900">{{ upcoming_bookings|length }}</p>
+                <p class="text-sm text-blue-600 mt-2">Scheduled appointments</p>
+            </div>
+            <div class="bg-gradient-to-r from-green-50 to-green-100 p-6 rounded-xl border border-green-200">
+                <h3 class="font-bold text-lg text-green-800">Past Sessions</h3>
+                <p class="text-3xl font-bold text-gray-900">{{ past_bookings|length }}</p>
+                <p class="text-sm text-green-600 mt-2">Completed bookings</p>
+            </div>
+            <div class="bg-gradient-to-r from-purple-50 to-purple-100 p-6 rounded-xl border border-purple-200">
+                <h3 class="font-bold text-lg text-purple-800">Total Spent</h3>
+                <p class="text-3xl font-bold text-gray-900">
+                    ₹{{ past_bookings|sum(attribute='mentor.price') }}
+                </p>
+                <p class="text-sm text-purple-600 mt-2">All sessions</p>
+            </div>
+            <div class="bg-gradient-to-r from-yellow-50 to-yellow-100 p-6 rounded-xl border border-yellow-200">
+                <h3 class="font-bold text-lg text-yellow-800">Enrollments</h3>
+                <p class="text-3xl font-bold text-gray-900">{{ current_user.enrollments|length }}</p>
+                <p class="text-sm text-yellow-600 mt-2">Active programs</p>
+            </div>
+        </div>
+        
         <h2 class="text-xl font-semibold mb-4">Your Upcoming Sessions</h2>
-        <div class="bg-white rounded-lg shadow overflow-hidden">
+        {% if upcoming_bookings %}
+        <div class="bg-white rounded-xl shadow overflow-hidden mb-8">
             <table class="min-w-full divide-y divide-gray-200">
-                <thead class="bg-gray-50">
+                <thead class="bg-gradient-to-r from-gray-50 to-gray-100">
                     <tr>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Mentor</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Service</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Time</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Amount</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Mentor</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Service</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Date & Time</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Status</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Amount</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Actions</th>
                     </tr>
                 </thead>
                 <tbody class="bg-white divide-y divide-gray-200">
-                    {% for item in bookings %}
-                    <tr>
+                    {% for item in upcoming_bookings %}
+                    <tr class="hover:bg-gray-50 transition-colors">
                         <td class="px-6 py-4 whitespace-nowrap">
                             <div class="flex items-center">
-                                <div class="ml-4">
-                                    <div class="text-sm font-medium text-gray-900">
+                                <div class="w-10 h-10 rounded-full bg-gradient-to-br from-blue-100 to-blue-200 flex items-center justify-center mr-3">
+                                    <span class="font-bold text-blue-700">{{ item.mentor.username[0]|upper }}</span>
+                                </div>
+                                <div>
+                                    <div class="text-sm font-semibold text-gray-900">
                                         {{ item.mentor.full_name if item.mentor.full_name else item.mentor.username }}
                                     </div>
                                     <div class="text-sm text-gray-500">{{ item.mentor.domain }}</div>
                                 </div>
                             </div>
                         </td>
-                        <td class="px-6 py-4 whitespace-nowrap">{{ item.booking.service_name }}</td>
-                        <td class="px-6 py-4 whitespace-nowrap">{{ item.booking.slot_time }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span class="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-medium">
+                                {{ item.booking.service_name }}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="text-sm font-medium text-gray-900">
+                                {{ item.booking.booking_date|format_date }}
+                            </div>
+                            <div class="text-sm text-gray-500">
+                                {{ item.booking.booking_time|format_time }}
+                            </div>
+                        </td>
                         <td class="px-6 py-4 whitespace-nowrap">
                             {% if item.booking.status == 'Paid' %}
-                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                                {{ item.booking.status }}
+                            <span class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                                <i class="fas fa-check-circle mr-1"></i> {{ item.booking.status }}
                             </span>
                             {% elif item.booking.status == 'Pending' %}
-                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
-                                {{ item.booking.status }}
+                            <span class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
+                                <i class="fas fa-clock mr-1"></i> {{ item.booking.status }}
+                            </span>
+                            {% elif item.booking.status == 'Cancelled' %}
+                            <span class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
+                                <i class="fas fa-times mr-1"></i> {{ item.booking.status }}
                             </span>
                             {% else %}
-                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">
+                            <span class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">
                                 {{ item.booking.status }}
                             </span>
                             {% endif %}
                         </td>
-                        <td class="px-6 py-4 whitespace-nowrap">₹{{ item.mentor.price }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold">
+                            ₹{{ item.mentor.price }}
+                        </td>
                         <td class="px-6 py-4 whitespace-nowrap">
-                            {% if item.booking.status == 'Paid' %}
-                            <button onclick="window.open('https://meet.google.com/new', '_blank')" 
-                                    class="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700">
-                                Join Meeting
-                            </button>
-                            {% else %}
-                            <button onclick="if(confirm('Pay ₹{{ item.mentor.price }}?')) { 
-                                fetch('/process-payment/{{ item.booking.id }}', {method: 'POST'})
-                                .then(() => location.reload());
-                            }" 
-                                    class="px-3 py-1 bg-yellow-600 text-white rounded hover:bg-yellow-700">
-                                Pay ₹{{ item.mentor.price }}
-                            </button>
-                            {% endif %}
-                        </td>
-                    </tr>
-                    {% else %}
-                    <tr>
-                        <td colspan="6" class="px-6 py-8 text-center">
-                            <div class="text-gray-500 mb-4">
-                                <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                </svg>
+                            <div class="flex items-center space-x-2">
+                                {% if item.booking.status == 'Paid' and item.booking.meeting_link %}
+                                <a href="{{ item.booking.meeting_link }}" target="_blank" 
+                                   class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center gap-1">
+                                    <i class="fas fa-video"></i> Join
+                                </a>
+                                {% elif item.booking.status == 'Pending' %}
+                                <button onclick="processPayment('{{ item.booking.id }}', '{{ item.mentor.price }}')" 
+                                        class="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors flex items-center gap-1">
+                                    <i class="fas fa-rupee-sign"></i> Pay ₹{{ item.mentor.price }}
+                                </button>
+                                {% endif %}
+                                <button onclick="showBookingDetails('{{ item.booking.id }}')"
+                                        class="px-3 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors">
+                                    <i class="fas fa-info-circle"></i>
+                                </button>
                             </div>
-                            <p class="text-gray-500 mb-2">No bookings yet.</p>
-                            <a href="{{ url_for('explore') }}" class="text-indigo-600 hover:text-indigo-900 font-medium underline">
-                                Find a mentor and book your first session
-                            </a>
                         </td>
                     </tr>
                     {% endfor %}
                 </tbody>
             </table>
         </div>
+        {% else %}
+        <div class="bg-white rounded-xl shadow p-8 text-center mb-8">
+            <div class="text-gray-500 mb-4">
+                <svg class="mx-auto h-16 w-16 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+            </div>
+            <p class="text-gray-500 mb-2 text-lg font-medium">No upcoming sessions</p>
+            <p class="text-gray-400 mb-6">Book your first session with an expert mentor</p>
+            <a href="{{ url_for('explore') }}" class="inline-flex items-center px-6 py-3 bg-gradient-to-r from-primary to-secondary text-white font-semibold rounded-xl hover:shadow-lg transition-all">
+                <i class="fas fa-search mr-2"></i> Find a Mentor
+            </a>
+        </div>
+        {% endif %}
+
+        <!-- Past Sessions -->
+        {% if past_bookings %}
+        <h2 class="text-xl font-semibold mb-4">Past Sessions</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
+            {% for item in past_bookings %}
+            <div class="bg-white rounded-xl shadow border border-gray-100 p-6 hover:shadow-md transition-shadow">
+                <div class="flex items-center justify-between mb-4">
+                    <div class="flex items-center">
+                        <div class="w-12 h-12 rounded-full bg-gradient-to-br from-blue-100 to-blue-200 flex items-center justify-center mr-3">
+                            <span class="font-bold text-blue-700">{{ item.mentor.username[0]|upper }}</span>
+                        </div>
+                        <div>
+                            <h4 class="font-semibold text-gray-900">{{ item.mentor.full_name or item.mentor.username }}</h4>
+                            <p class="text-sm text-gray-500">{{ item.mentor.domain }}</p>
+                        </div>
+                    </div>
+                    <span class="px-3 py-1 bg-gray-100 text-gray-800 rounded-full text-xs font-medium">
+                        Completed
+                    </span>
+                </div>
+                
+                <div class="space-y-3 mb-4">
+                    <div>
+                        <p class="text-sm text-gray-500">Service</p>
+                        <p class="font-medium">{{ item.booking.service_name }}</p>
+                    </div>
+                    <div>
+                        <p class="text-sm text-gray-500">Date & Time</p>
+                        <p class="font-medium">{{ item.booking.booking_date|format_date }} • {{ item.booking.booking_time|format_time }}</p>
+                    </div>
+                    <div>
+                        <p class="text-sm text-gray-500">Amount</p>
+                        <p class="font-medium text-green-600">₹{{ item.mentor.price }}</p>
+                    </div>
+                </div>
+                
+                {% if item.booking.notes %}
+                <div class="mt-4 pt-4 border-t border-gray-100">
+                    <p class="text-sm text-gray-500 mb-1">Notes</p>
+                    <p class="text-sm text-gray-700">{{ item.booking.notes }}</p>
+                </div>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
 
         <!-- Enrolled Programs Section -->
-        <div class="mt-12">
-            <h2 class="text-xl font-semibold mb-4">Your Enrolled Programs</h2>
+        <div class="mb-12">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-xl font-semibold">Your Enrolled Programs</h2>
+                <a href="{{ url_for('enroll') }}" class="px-4 py-2 bg-gradient-to-r from-primary to-secondary text-white rounded-lg hover:shadow-lg transition-all flex items-center gap-2">
+                    <i class="fas fa-plus"></i> Enroll Now
+                </a>
+            </div>
+            
             {% if current_user.enrollments %}
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {% for enrollment in current_user.enrollments %}
-                <div class="bg-white rounded-lg shadow p-6 border border-gray-200">
+                <div class="bg-white rounded-xl shadow border border-gray-200 p-6 hover:shadow-md transition-shadow">
                     <div class="flex justify-between items-start mb-4">
-                        <h3 class="font-bold text-lg text-gray-900">{{ enrollment.program_name|replace('_', ' ')|title }}</h3>
+                        <div>
+                            <h3 class="font-bold text-lg text-gray-900">{{ enrollment.program_name|replace('_', ' ')|title }}</h3>
+                            <p class="text-sm text-gray-500">Enrolled: {{ enrollment.enrollment_date.strftime('%b %d, %Y') }}</p>
+                        </div>
                         {% if enrollment.status == 'active' %}
-                        <span class="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
+                        <span class="px-3 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
                             {{ enrollment.status|title }}
                         </span>
                         {% else %}
-                        <span class="px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">
+                        <span class="px-3 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">
                             {{ enrollment.status|title }}
                         </span>
                         {% endif %}
@@ -108,36 +214,37 @@
                     <div class="space-y-2 text-sm text-gray-600 mb-4">
                         {% if enrollment.additional_data %}
                             {% set data = enrollment.additional_data|from_json %}
-                            <p><span class="font-medium">Enrolled:</span> {{ enrollment.enrollment_date.strftime('%b %d, %Y') }}</p>
-                            {% if data.phone %}<p><span class="font-medium">Phone:</span> {{ data.phone }}</p>{% endif %}
-                            {% if data.education %}<p><span class="font-medium">Education:</span> {{ data.education }}</p>{% endif %}
+                            {% if data.phone %}<p><i class="fas fa-phone text-gray-400 mr-2"></i> {{ data.phone }}</p>{% endif %}
+                            {% if data.education %}<p><i class="fas fa-graduation-cap text-gray-400 mr-2"></i> {{ data.education }}</p>{% endif %}
                         {% endif %}
                     </div>
                     
                     <div class="pt-4 border-t border-gray-100">
                         {% if enrollment.payment_status == 'pending' %}
-                        <button onclick="if(confirm('Pay ₹{{ enrollment.payment_amount }}?')) { 
-                            fetch('/process-enrollment-payment/{{ enrollment.id }}', {method: 'POST'})
-                            .then(() => location.reload());
-                        }" 
-                                class="w-full px-4 py-2 bg-yellow-600 text-white rounded-md hover:bg-yellow-700">
-                            Complete Payment (₹{{ enrollment.payment_amount }})
+                        <button onclick="processEnrollmentPayment('{{ enrollment.id }}', '{{ enrollment.payment_amount }}')" 
+                                class="w-full px-4 py-3 bg-gradient-to-r from-yellow-500 to-yellow-600 text-white rounded-lg hover:shadow-lg transition-all">
+                            Complete Payment - ₹{{ enrollment.payment_amount }}
                         </button>
                         {% else %}
-                        <p class="text-sm text-gray-500 text-center">Payment: {{ enrollment.payment_status|title }}</p>
+                        <div class="flex items-center justify-between">
+                            <span class="px-3 py-1 bg-green-100 text-green-800 rounded-full text-xs font-medium">
+                                <i class="fas fa-check-circle mr-1"></i> Paid
+                            </span>
+                            <span class="text-sm text-gray-600">₹{{ enrollment.payment_amount }}</span>
+                        </div>
                         {% endif %}
                     </div>
                 </div>
                 {% endfor %}
             </div>
             {% else %}
-            <div class="bg-white rounded-lg shadow p-8 text-center">
+            <div class="bg-white rounded-xl shadow p-8 text-center">
+                <div class="text-gray-400 mb-4">
+                    <i class="fas fa-graduation-cap text-5xl"></i>
+                </div>
                 <p class="text-gray-500 mb-4">You haven't enrolled in any programs yet.</p>
-                <a href="{{ url_for('enroll') }}" class="inline-flex items-center px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700">
-                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                    </svg>
-                    Enroll in Career Mentorship Program
+                <a href="{{ url_for('enroll') }}" class="inline-flex items-center px-6 py-3 bg-gradient-to-r from-primary to-secondary text-white rounded-xl hover:shadow-lg transition-all">
+                    <i class="fas fa-rocket mr-2"></i> Start Your Journey
                 </a>
             </div>
             {% endif %}
@@ -145,36 +252,69 @@
 
     {% elif type == 'mentor' %}
         <!-- Mentor Stats -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            <div class="bg-indigo-50 p-6 rounded-lg">
-                <h3 class="font-bold text-lg text-indigo-800">Total Earnings</h3>
-                <p class="text-3xl font-bold text-gray-900">₹{{ current_user.price * bookings|length }}</p>
-                <p class="text-sm text-indigo-600 mt-2">{{ bookings|length }} sessions × ₹{{ current_user.price }}/session</p>
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            <div class="bg-gradient-to-r from-blue-50 to-blue-100 p-6 rounded-xl border border-blue-200">
+                <h3 class="font-bold text-lg text-blue-800">Total Earnings</h3>
+                <p class="text-3xl font-bold text-gray-900">₹{{ total_earnings }}</p>
+                <p class="text-sm text-blue-600 mt-2">All completed sessions</p>
             </div>
-            <div class="bg-green-50 p-6 rounded-lg">
-                <h3 class="font-bold text-lg text-green-800">Total Sessions</h3>
-                <p class="text-3xl font-bold text-gray-900">{{ bookings|length }}</p>
-                <p class="text-sm text-green-600 mt-2">Bookings completed</p>
+            <div class="bg-gradient-to-r from-green-50 to-green-100 p-6 rounded-xl border border-green-200">
+                <h3 class="font-bold text-lg text-green-800">Upcoming Sessions</h3>
+                <p class="text-3xl font-bold text-gray-900">{{ upcoming_bookings|length }}</p>
+                <p class="text-sm text-green-600 mt-2">Scheduled appointments</p>
             </div>
-            <div class="bg-purple-50 p-6 rounded-lg">
-                <h3 class="font-bold text-lg text-purple-800">Your Rate</h3>
+            <div class="bg-gradient-to-r from-purple-50 to-purple-100 p-6 rounded-xl border border-purple-200">
+                <h3 class="font-bold text-lg text-purple-800">Session Rate</h3>
                 <p class="text-3xl font-bold text-gray-900">₹{{ current_user.price }}</p>
                 <p class="text-sm text-purple-600 mt-2">Per session</p>
+            </div>
+            <div class="bg-gradient-to-r from-yellow-50 to-yellow-100 p-6 rounded-xl border border-yellow-200">
+                <h3 class="font-bold text-lg text-yellow-800">Profile Views</h3>
+                <p class="text-3xl font-bold text-gray-900">{{ current_user.profile_views }}</p>
+                <p class="text-sm text-yellow-600 mt-2">Public profile visits</p>
+            </div>
+        </div>
+        
+        <!-- Profile Link Card -->
+        <div class="bg-gradient-to-r from-indigo-50 to-indigo-100 rounded-xl shadow border border-indigo-200 p-6 mb-8">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h3 class="text-lg font-semibold text-indigo-800 mb-2">Your Public Profile</h3>
+                    <p class="text-indigo-600 mb-4">Share your mentor profile with others</p>
+                    <div class="flex items-center gap-4">
+                        <div class="flex-1">
+                            <div class="flex">
+                                <input type="text" id="profileLinkInput" value="{{ profile_url }}" 
+                                       class="flex-1 px-4 py-3 bg-white border border-gray-300 rounded-l-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent" readonly>
+                                <button onclick="copyProfileLink()" 
+                                        class="px-6 py-3 bg-gradient-to-r from-primary to-secondary text-white font-semibold rounded-r-lg hover:opacity-90 transition-opacity">
+                                    <i class="fas fa-copy mr-2"></i> Copy
+                                </button>
+                            </div>
+                        </div>
+                        <a href="{{ url_for('manage_profile_link') }}" 
+                           class="px-6 py-3 bg-white text-primary border border-primary rounded-lg hover:bg-primary hover:text-white transition-colors font-semibold">
+                            <i class="fas fa-cog mr-2"></i> Manage
+                        </a>
+                    </div>
+                </div>
+                <div class="text-center">
+                    <div class="text-4xl font-bold text-indigo-800">{{ current_user.profile_views }}</div>
+                    <div class="text-sm text-indigo-600 mt-1">Profile Views</div>
+                </div>
             </div>
         </div>
         
         <!-- Mentor Profile Status -->
         {% if not current_user.is_verified %}
-        <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-8">
-            <div class="flex">
+        <div class="bg-gradient-to-r from-yellow-50 to-yellow-100 border border-yellow-200 rounded-xl p-6 mb-8">
+            <div class="flex items-center">
                 <div class="flex-shrink-0">
-                    <svg class="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
-                        <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
-                    </svg>
+                    <i class="fas fa-exclamation-triangle text-3xl text-yellow-500"></i>
                 </div>
-                <div class="ml-3">
-                    <h3 class="text-sm font-medium text-yellow-800">Profile Under Review</h3>
-                    <div class="mt-2 text-sm text-yellow-700">
+                <div class="ml-6">
+                    <h3 class="text-lg font-semibold text-yellow-800">Profile Under Review</h3>
+                    <div class="mt-2 text-yellow-700">
                         <p>Your mentor profile is pending verification by our admin team. You'll be able to accept bookings once verified.</p>
                     </div>
                 </div>
@@ -182,113 +322,397 @@
         </div>
         {% endif %}
         
+        <!-- Quick Actions -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <a href="{{ url_for('edit_profile') }}" class="bg-white rounded-xl shadow border border-gray-200 p-6 hover:shadow-md transition-shadow">
+                <div class="flex items-center">
+                    <div class="w-12 h-12 rounded-lg bg-blue-100 flex items-center justify-center mr-4">
+                        <i class="fas fa-user-edit text-blue-600 text-xl"></i>
+                    </div>
+                    <div>
+                        <h4 class="font-semibold text-gray-900">Edit Profile</h4>
+                        <p class="text-sm text-gray-500">Update your information</p>
+                    </div>
+                </div>
+            </a>
+            <a href="{{ url_for('manage_profile_link') }}" class="bg-white rounded-xl shadow border border-gray-200 p-6 hover:shadow-md transition-shadow">
+                <div class="flex items-center">
+                    <div class="w-12 h-12 rounded-lg bg-green-100 flex items-center justify-center mr-4">
+                        <i class="fas fa-link text-green-600 text-xl"></i>
+                    </div>
+                    <div>
+                        <h4 class="font-semibold text-gray-900">Profile Link</h4>
+                        <p class="text-sm text-gray-500">Manage your public profile</p>
+                    </div>
+                </div>
+            </a>
+            <div class="bg-white rounded-xl shadow border border-gray-200 p-6">
+                <div class="flex items-center">
+                    <div class="w-12 h-12 rounded-lg bg-purple-100 flex items-center justify-center mr-4">
+                        <i class="fas fa-chart-line text-purple-600 text-xl"></i>
+                    </div>
+                    <div>
+                        <h4 class="font-semibold text-gray-900">Your Rating</h4>
+                        <p class="text-sm text-gray-500">⭐ 4.8 (24 reviews)</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
         <!-- Upcoming Appointments -->
-        <h2 class="text-xl font-semibold mb-4">Your Appointments</h2>
-        <div class="bg-white rounded-lg shadow overflow-hidden">
+        <h2 class="text-xl font-semibold mb-4">Upcoming Appointments</h2>
+        {% if upcoming_bookings %}
+        <div class="bg-white rounded-xl shadow overflow-hidden mb-8">
             <table class="min-w-full divide-y divide-gray-200">
-                <thead class="bg-gray-50">
+                <thead class="bg-gradient-to-r from-gray-50 to-gray-100">
                     <tr>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Learner</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Service</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Time</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Earnings</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Learner</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Service</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Date & Time</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Status</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Earnings</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Actions</th>
                     </tr>
                 </thead>
                 <tbody class="bg-white divide-y divide-gray-200">
-                    {% for item in bookings %}
-                    <tr>
+                    {% for item in upcoming_bookings %}
+                    <tr class="hover:bg-gray-50 transition-colors">
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="flex items-center">
+                                <div class="w-10 h-10 rounded-full bg-gradient-to-br from-green-100 to-green-200 flex items-center justify-center mr-3">
+                                    <span class="font-bold text-green-700">{{ item.learner.username[0]|upper if item.learner else '?' }}</span>
+                                </div>
+                                <div>
+                                    <div class="text-sm font-semibold text-gray-900">
+                                        {{ item.learner.username if item.learner else 'Unknown' }}
+                                    </div>
+                                    {% if item.learner and item.learner.email %}
+                                    <div class="text-sm text-gray-500">{{ item.learner.email }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span class="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-medium">
+                                {{ item.booking.service_name }}
+                            </span>
+                        </td>
                         <td class="px-6 py-4 whitespace-nowrap">
                             <div class="text-sm font-medium text-gray-900">
-                                {% if item.learner %}
-                                    {{ item.learner.username }}
-                                {% else %}
-                                    Unknown
-                                {% endif %}
+                                {{ item.booking.booking_date|format_date }}
+                            </div>
+                            <div class="text-sm text-gray-500">
+                                {{ item.booking.booking_time|format_time }}
                             </div>
                         </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ item.booking.service_name }}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ item.booking.slot_time }}</td>
                         <td class="px-6 py-4 whitespace-nowrap">
                             {% if item.booking.status == 'Paid' %}
-                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                                {{ item.booking.status }}
+                            <span class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                                <i class="fas fa-check-circle mr-1"></i> Paid
                             </span>
                             {% elif item.booking.status == 'Pending' %}
-                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
-                                {{ item.booking.status }}
-                            </span>
-                            {% else %}
-                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">
-                                {{ item.booking.status }}
+                            <span class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
+                                <i class="fas fa-clock mr-1"></i> Pending
                             </span>
                             {% endif %}
                         </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold">
                             ₹{{ current_user.price }}
                         </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                            {% if item.booking.status == 'Paid' %}
-                            <button onclick="window.open('https://meet.google.com/new', '_blank')" 
-                                    class="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700">
-                                Start Meeting
-                            </button>
-                            {% else %}
-                            <span class="px-3 py-1 bg-gray-200 text-gray-600 rounded">
-                                Waiting for payment
-                            </span>
-                            {% endif %}
-                        </td>
-                    </tr>
-                    {% else %}
-                    <tr>
-                        <td colspan="6" class="px-6 py-8 text-center">
-                            <div class="text-gray-500 mb-4">
-                                <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                                </svg>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="flex items-center space-x-2">
+                                {% if item.booking.status == 'Paid' %}
+                                {% if item.booking.meeting_link %}
+                                <a href="{{ item.booking.meeting_link }}" target="_blank" 
+                                   class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center gap-1">
+                                    <i class="fas fa-video"></i> Start
+                                </a>
+                                {% else %}
+                                <button onclick="addMeetingLink('{{ item.booking.id }}')" 
+                                        class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-1">
+                                    <i class="fas fa-link"></i> Add Link
+                                </button>
+                                {% endif %}
+                                <button onclick="markCompleted('{{ item.booking.id }}')" 
+                                        class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors">
+                                    Complete
+                                </button>
+                                {% else %}
+                                <span class="px-4 py-2 bg-gray-200 text-gray-600 rounded-lg">
+                                    Waiting for payment
+                                </span>
+                                {% endif %}
                             </div>
-                            <p class="text-gray-500 mb-2">No appointments yet.</p>
-                            {% if not current_user.is_verified %}
-                            <p class="text-sm text-gray-500">Your profile needs verification to appear in mentor listings.</p>
-                            {% else %}
-                            <p class="text-sm text-gray-500">Learners will be able to book sessions with you once your profile is live.</p>
-                            {% endif %}
                         </td>
                     </tr>
                     {% endfor %}
                 </tbody>
             </table>
         </div>
+        {% else %}
+        <div class="bg-white rounded-xl shadow p-8 text-center mb-8">
+            <div class="text-gray-500 mb-4">
+                <svg class="mx-auto h-16 w-16 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                </svg>
+            </div>
+            <p class="text-gray-500 mb-2 text-lg font-medium">No upcoming appointments</p>
+            {% if not current_user.is_verified %}
+            <p class="text-gray-400 mb-6">Your profile is pending verification to appear in mentor listings.</p>
+            {% else %}
+            <p class="text-gray-400 mb-6">Share your profile link to get more bookings</p>
+            {% endif %}
+        </div>
+        {% endif %}
+        
+        <!-- Past Sessions -->
+        {% if past_bookings %}
+        <h2 class="text-xl font-semibold mb-4">Past Sessions</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {% for item in past_bookings %}
+            <div class="bg-white rounded-xl shadow border border-gray-100 p-6 hover:shadow-md transition-shadow">
+                <div class="flex items-center justify-between mb-4">
+                    <div class="flex items-center">
+                        <div class="w-12 h-12 rounded-full bg-gradient-to-br from-green-100 to-green-200 flex items-center justify-center mr-3">
+                            <span class="font-bold text-green-700">{{ item.learner.username[0]|upper if item.learner else '?' }}</span>
+                        </div>
+                        <div>
+                            <h4 class="font-semibold text-gray-900">{{ item.learner.username if item.learner else 'Unknown' }}</h4>
+                            <p class="text-sm text-gray-500">Completed</p>
+                        </div>
+                    </div>
+                    <span class="px-3 py-1 bg-gray-100 text-gray-800 rounded-full text-xs font-medium">
+                        {{ item.booking.booking_date|format_date }}
+                    </span>
+                </div>
+                
+                <div class="space-y-3 mb-4">
+                    <div>
+                        <p class="text-sm text-gray-500">Service</p>
+                        <p class="font-medium">{{ item.booking.service_name }}</p>
+                    </div>
+                    <div>
+                        <p class="text-sm text-gray-500">Time</p>
+                        <p class="font-medium">{{ item.booking.booking_time|format_time }}</p>
+                    </div>
+                    <div>
+                        <p class="text-sm text-gray-500">Earnings</p>
+                        <p class="font-medium text-green-600">₹{{ current_user.price }}</p>
+                    </div>
+                </div>
+                
+                {% if item.booking.notes %}
+                <div class="mt-4 pt-4 border-t border-gray-100">
+                    <p class="text-sm text-gray-500 mb-1">Notes</p>
+                    <p class="text-sm text-gray-700">{{ item.booking.notes }}</p>
+                </div>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
         
         <!-- Quick Profile Info -->
-        <div class="mt-8 bg-white rounded-lg shadow p-6">
-            <h3 class="text-lg font-semibold mb-4">Your Profile Info</h3>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                    <p class="text-sm text-gray-600">Domain</p>
-                    <p class="font-medium">{{ current_user.domain or 'Not set' }}</p>
+        <div class="mt-12 bg-white rounded-xl shadow p-6">
+            <h3 class="text-xl font-semibold mb-6">Your Profile Info</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div class="bg-gradient-to-br from-gray-50 to-gray-100 p-4 rounded-lg">
+                    <p class="text-sm text-gray-600 mb-1"><i class="fas fa-briefcase mr-2"></i>Domain</p>
+                    <p class="font-semibold text-gray-900">{{ current_user.domain or 'Not set' }}</p>
                 </div>
-                <div>
-                    <p class="text-sm text-gray-600">Services</p>
-                    <p class="font-medium">{{ current_user.services or 'Not set' }}</p>
+                <div class="bg-gradient-to-br from-blue-50 to-blue-100 p-4 rounded-lg">
+                    <p class="text-sm text-gray-600 mb-1"><i class="fas fa-cogs mr-2"></i>Services</p>
+                    <p class="font-semibold text-gray-900">{{ current_user.services or 'Not set' }}</p>
                 </div>
-                <div>
-                    <p class="text-sm text-gray-600">Experience</p>
-                    <p class="font-medium">{{ current_user.experience or 'Not set' }}</p>
+                <div class="bg-gradient-to-br from-green-50 to-green-100 p-4 rounded-lg">
+                    <p class="text-sm text-gray-600 mb-1"><i class="fas fa-chart-line mr-2"></i>Experience</p>
+                    <p class="font-semibold text-gray-900">{{ current_user.experience or 'Not set' }}</p>
                 </div>
-                <div>
-                    <p class="text-sm text-gray-600">Availability</p>
-                    <p class="font-medium">{{ current_user.availability or 'Not set' }}</p>
+                <div class="bg-gradient-to-br from-purple-50 to-purple-100 p-4 rounded-lg">
+                    <p class="text-sm text-gray-600 mb-1"><i class="fas fa-calendar-alt mr-2"></i>Availability</p>
+                    <p class="font-semibold text-gray-900">{{ current_user.availability or 'Not set' }}</p>
                 </div>
             </div>
         </div>
     {% endif %}
 </div>
 
+<!-- Payment Modal -->
+<div id="paymentModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 p-6">
+        <div class="flex items-center justify-between mb-6">
+            <h3 class="text-xl font-bold text-gray-900">Confirm Payment</h3>
+            <button onclick="closePaymentModal()" class="text-gray-400 hover:text-gray-600">
+                <i class="fas fa-times text-xl"></i>
+            </button>
+        </div>
+        <p class="text-gray-600 mb-4">You are about to pay <span id="paymentAmount" class="font-bold text-green-600"></span> for this session.</p>
+        <div class="space-y-4">
+            <button id="confirmPaymentBtn" onclick="confirmPayment()" 
+                    class="w-full py-3 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl hover:shadow-lg transition-all font-semibold">
+                <i class="fas fa-lock mr-2"></i> Confirm Payment
+            </button>
+            <button onclick="closePaymentModal()" 
+                    class="w-full py-3 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-colors">
+                Cancel
+            </button>
+        </div>
+    </div>
+</div>
+
 <script>
-// Simple alert for testing
-console.log('Dashboard loaded');
+// Global variables
+let currentBookingId = null;
+let currentPaymentAmount = null;
+
+// Profile Link Functions
+function copyProfileLink() {
+    const input = document.getElementById('profileLinkInput');
+    input.select();
+    document.execCommand('copy');
+    
+    // Show notification
+    showNotification('Profile link copied to clipboard!', 'success');
+}
+
+// Payment Functions
+function processPayment(bookingId, amount) {
+    currentBookingId = bookingId;
+    currentPaymentAmount = amount;
+    
+    document.getElementById('paymentAmount').textContent = '₹' + amount;
+    document.getElementById('paymentModal').classList.remove('hidden');
+    document.getElementById('paymentModal').classList.add('flex');
+}
+
+function closePaymentModal() {
+    document.getElementById('paymentModal').classList.add('hidden');
+    document.getElementById('paymentModal').classList.remove('flex');
+    currentBookingId = null;
+    currentPaymentAmount = null;
+}
+
+function confirmPayment() {
+    if (!currentBookingId) return;
+    
+    const btn = document.getElementById('confirmPaymentBtn');
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Processing...';
+    btn.disabled = true;
+    
+    fetch('/process-payment/' + currentBookingId, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showNotification('Payment successful!', 'success');
+            setTimeout(() => location.reload(), 1500);
+        } else {
+            showNotification(data.message || 'Payment failed', 'error');
+            btn.innerHTML = '<i class="fas fa-lock mr-2"></i> Confirm Payment';
+            btn.disabled = false;
+        }
+    })
+    .catch(error => {
+        showNotification('Error processing payment', 'error');
+        btn.innerHTML = '<i class="fas fa-lock mr-2"></i> Confirm Payment';
+        btn.disabled = false;
+    });
+}
+
+// Mentor Functions
+function addMeetingLink(bookingId) {
+    const link = prompt('Enter Google Meet/Zoom meeting link:');
+    if (link) {
+        fetch('/update-meeting-link/' + bookingId, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ meeting_link: link })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showNotification('Meeting link added!', 'success');
+                setTimeout(() => location.reload(), 1000);
+            }
+        });
+    }
+}
+
+function markCompleted(bookingId) {
+    if (confirm('Mark this session as completed?')) {
+        fetch('/update-booking-status/' + bookingId, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ status: 'Completed' })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showNotification('Session marked as completed!', 'success');
+                setTimeout(() => location.reload(), 1000);
+            }
+        });
+    }
+}
+
+// Enrollment Payment
+function processEnrollmentPayment(enrollmentId, amount) {
+    if (confirm(`Pay ₹${amount} for this enrollment?`)) {
+        fetch('/process-enrollment-payment/' + enrollmentId, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showNotification('Payment completed!', 'success');
+                setTimeout(() => location.reload(), 1500);
+            } else {
+                showNotification(data.message || 'Payment failed', 'error');
+            }
+        });
+    }
+}
+
+// Utility Functions
+function showNotification(message, type = 'info') {
+    // Create notification element
+    const notification = document.createElement('div');
+    notification.className = `fixed top-4 right-4 px-6 py-3 rounded-xl shadow-lg z-50 transform transition-all duration-300 ${
+        type === 'success' ? 'bg-green-100 text-green-800 border border-green-200' :
+        type === 'error' ? 'bg-red-100 text-red-800 border border-red-200' :
+        'bg-blue-100 text-blue-800 border border-blue-200'
+    }`;
+    notification.innerHTML = `
+        <div class="flex items-center">
+            <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'} mr-3"></i>
+            <span>${message}</span>
+        </div>
+    `;
+    
+    document.body.appendChild(notification);
+    
+    // Remove after 3 seconds
+    setTimeout(() => {
+        notification.style.opacity = '0';
+        notification.style.transform = 'translateX(100%)';
+        setTimeout(() => notification.remove(), 300);
+    }, 3000);
+}
+
+// Initialize
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('Dashboard loaded');
+});
 </script>
 {% endblock %}
