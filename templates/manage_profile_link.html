@@ -1,193 +1,148 @@
 {% extends "base.html" %}
 
-{% block title %}Manage Profile Link - ClearQ{% endblock %}
-
 {% block content %}
 <div class="max-w-4xl mx-auto py-10 px-4">
-    <h1 class="text-3xl font-bold mb-2">Manage Your Profile Link</h1>
-    <p class="text-gray-600 mb-8">Customize and share your public mentor profile</p>
-
-    <!-- Current Link Card -->
-    <div class="bg-gradient-to-r from-primary/5 to-secondary/5 rounded-2xl border border-primary/20 p-8 mb-8">
-        <h2 class="text-xl font-semibold text-gray-900 mb-4">Your Public Profile</h2>
-        
-        <div class="space-y-4">
+    <div class="bg-white rounded-2xl shadow-xl p-8">
+        <div class="flex items-center gap-4 mb-8">
+            <div class="w-12 h-12 rounded-xl bg-gradient-to-r from-primary to-secondary flex items-center justify-center">
+                <i class="fas fa-link text-white"></i>
+            </div>
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">Profile Link</label>
-                <div class="flex">
-                    <input type="text" id="profileLink" value="{{ profile_url }}" 
-                           class="flex-1 px-4 py-3 bg-white border border-r-0 border-gray-300 rounded-l-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent" readonly>
-                    <button onclick="copyToClipboard()" 
-                            class="px-6 py-3 bg-gradient-to-r from-primary to-secondary text-white font-semibold rounded-r-xl hover:opacity-90 transition-opacity">
-                        <i class="fas fa-copy mr-2"></i> Copy
-                    </button>
-                </div>
+                <h1 class="text-2xl font-bold text-gray-900">Your Public Profile Link</h1>
+                <p class="text-gray-600">Share this link like a LinkedIn profile</p>
             </div>
-            
-            <div class="flex items-center justify-between">
-                <div class="flex items-center">
-                    <div class="w-12 h-12 rounded-lg bg-blue-100 flex items-center justify-center mr-4">
-                        <i class="fas fa-eye text-blue-600"></i>
+        </div>
+
+        <!-- Profile Link Card -->
+        <div class="mb-8 p-6 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-100">
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div class="flex-1">
+                    <p class="font-semibold text-blue-800 mb-2">Your Public Profile Link</p>
+                    <div class="bg-white p-4 rounded-lg border border-blue-200">
+                        <p class="text-blue-600 break-all">{{ request.host_url }}mentor/profile/{{ current_user.id }}</p>
                     </div>
-                    <div>
-                        <p class="text-sm text-gray-500">Profile Views</p>
-                        <p class="text-2xl font-bold text-gray-900">{{ profile_views }}</p>
-                    </div>
+                    <p class="text-sm text-blue-600 mt-2">Share this link on social media, your resume, or with potential mentees</p>
                 </div>
-                
-                <div>
-                    <form method="POST" class="inline">
-                        <input type="hidden" name="action" value="toggle_visibility">
-                        <button type="submit" class="px-6 py-3 bg-white border border-primary text-primary rounded-xl hover:bg-primary hover:text-white transition-colors font-semibold">
-                            <i class="fas fa-{{ 'eye-slash' if is_public else 'eye' }} mr-2"></i>
-                            Make {{ 'Private' if is_public else 'Public' }}
-                        </button>
-                    </form>
+                <div class="flex gap-3">
+                    <button onclick="copyProfileLink()" 
+                            class="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2">
+                        <i class="fas fa-copy"></i>
+                        Copy Link
+                    </button>
+                    <a href="{{ url_for('mentor_public_profile', id=current_user.id) }}" 
+                       target="_blank"
+                       class="px-6 py-3 border border-blue-600 text-blue-600 rounded-lg hover:bg-blue-50 transition-colors flex items-center gap-2">
+                        <i class="fas fa-external-link-alt"></i>
+                        View Profile
+                    </a>
                 </div>
             </div>
         </div>
-    </div>
 
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-        <!-- Customize Link Card -->
-        <div class="bg-white rounded-2xl shadow border border-gray-200 p-8">
-            <h3 class="text-xl font-semibold text-gray-900 mb-4">Customize Your Link</h3>
-            <p class="text-gray-600 mb-6">Choose a custom username for your profile link</p>
-            
-            <form method="POST">
-                <input type="hidden" name="action" value="customize">
-                <div class="space-y-4">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Custom Username</label>
-                        <div class="flex">
-                            <span class="inline-flex items-center px-3 py-2 bg-gray-50 border border-r-0 border-gray-300 rounded-l-lg text-gray-500">
-                                clearq.in/mentor/public/
-                            </span>
-                            <input type="text" name="custom_slug" value="{{ profile_slug }}" 
-                                   class="flex-1 px-4 py-2 border border-gray-300 rounded-r-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                                   placeholder="your_username">
-                        </div>
-                    </div>
-                    
-                    <div class="text-sm text-gray-500 space-y-2">
-                        <p><i class="fas fa-info-circle mr-2"></i> Use only lowercase letters, numbers, and underscores</p>
-                        <p><i class="fas fa-info-circle mr-2"></i> Keep it professional and easy to remember</p>
-                    </div>
-                    
-                    <button type="submit" class="w-full py-3 bg-gradient-to-r from-primary to-secondary text-white rounded-xl hover:shadow-lg transition-all font-semibold">
-                        <i class="fas fa-check mr-2"></i> Update Link
-                    </button>
-                </div>
-            </form>
-        </div>
-
-        <!-- Regenerate Link Card -->
-        <div class="bg-white rounded-2xl shadow border border-gray-200 p-8">
-            <h3 class="text-xl font-semibold text-gray-900 mb-4">Regenerate Link</h3>
-            <p class="text-gray-600 mb-6">Generate a new random link for your profile</p>
-            
-            <form method="POST">
-                <input type="hidden" name="action" value="regenerate">
-                <button type="submit" class="w-full py-3 bg-gradient-to-r from-yellow-500 to-yellow-600 text-white rounded-xl hover:shadow-lg transition-all font-semibold">
-                    <i class="fas fa-sync-alt mr-2"></i> Generate New Link
+        <!-- Share Options -->
+        <div class="mb-8">
+            <h2 class="text-xl font-bold text-gray-900 mb-6">Share Your Profile</h2>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <button onclick="shareOnLinkedIn()" 
+                        class="p-4 bg-blue-700 text-white rounded-xl hover:bg-blue-800 transition-colors flex flex-col items-center gap-2">
+                    <i class="fab fa-linkedin-in text-2xl"></i>
+                    <span class="text-sm">LinkedIn</span>
                 </button>
-            </form>
-            
-            <div class="mt-6 pt-6 border-t border-gray-200">
-                <h4 class="font-semibold text-gray-900 mb-3">Quick Share</h4>
-                <div class="grid grid-cols-2 gap-3">
-                    <button onclick="shareOnWhatsApp()" class="p-3 bg-green-50 text-green-700 rounded-lg hover:bg-green-100 transition-colors flex items-center justify-center">
-                        <i class="fab fa-whatsapp mr-2"></i> WhatsApp
-                    </button>
-                    <button onclick="shareOnLinkedIn()" class="p-3 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition-colors flex items-center justify-center">
-                        <i class="fab fa-linkedin mr-2"></i> LinkedIn
-                    </button>
-                    <button onclick="shareOnTwitter()" class="p-3 bg-sky-50 text-sky-700 rounded-lg hover:bg-sky-100 transition-colors flex items-center justify-center">
-                        <i class="fab fa-twitter mr-2"></i> Twitter
-                    </button>
-                    <button onclick="shareViaEmail()" class="p-3 bg-red-50 text-red-700 rounded-lg hover:bg-red-100 transition-colors flex items-center justify-center">
-                        <i class="fas fa-envelope mr-2"></i> Email
-                    </button>
+                <button onclick="shareOnTwitter()" 
+                        class="p-4 bg-blue-400 text-white rounded-xl hover:bg-blue-500 transition-colors flex flex-col items-center gap-2">
+                    <i class="fab fa-twitter text-2xl"></i>
+                    <span class="text-sm">Twitter</span>
+                </button>
+                <button onclick="shareOnWhatsApp()" 
+                        class="p-4 bg-green-500 text-white rounded-xl hover:bg-green-600 transition-colors flex flex-col items-center gap-2">
+                    <i class="fab fa-whatsapp text-2xl"></i>
+                    <span class="text-sm">WhatsApp</span>
+                </button>
+                <button onclick="shareByEmail()" 
+                        class="p-4 bg-gray-600 text-white rounded-xl hover:bg-gray-700 transition-colors flex flex-col items-center gap-2">
+                    <i class="fas fa-envelope text-2xl"></i>
+                    <span class="text-sm">Email</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Profile Stats -->
+        <div class="bg-gray-50 rounded-xl p-6">
+            <h2 class="text-xl font-bold text-gray-900 mb-6">Profile Statistics</h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="text-center">
+                    <div class="text-3xl font-bold text-primary mb-2">0</div>
+                    <p class="text-gray-600">Profile Views</p>
+                </div>
+                <div class="text-center">
+                    <div class="text-3xl font-bold text-primary mb-2">{{ bookings|length }}</div>
+                    <p class="text-gray-600">Total Bookings</p>
+                </div>
+                <div class="text-center">
+                    <div class="text-3xl font-bold text-primary mb-2">0</div>
+                    <p class="text-gray-600">Link Clicks</p>
                 </div>
             </div>
         </div>
-    </div>
 
-    <!-- QR Code Section -->
-    <div class="mt-8 bg-white rounded-2xl shadow border border-gray-200 p-8">
-        <h3 class="text-xl font-semibold text-gray-900 mb-4">QR Code</h3>
-        <p class="text-gray-600 mb-6">Scan this QR code to quickly access your profile</p>
-        
-        <div class="flex flex-col md:flex-row items-center justify-between gap-8">
-            <div class="bg-white p-4 rounded-xl border border-gray-200">
-                <div id="qrcode" class="w-48 h-48"></div>
-            </div>
-            
-            <div class="flex-1">
-                <h4 class="font-semibold text-gray-900 mb-3">Tips for Sharing</h4>
-                <ul class="space-y-3 text-gray-600">
-                    <li class="flex items-start">
-                        <i class="fas fa-check text-green-500 mt-1 mr-3"></i>
-                        <span>Add your profile link to your email signature</span>
-                    </li>
-                    <li class="flex items-start">
-                        <i class="fas fa-check text-green-500 mt-1 mr-3"></i>
-                        <span>Share on LinkedIn to reach professionals</span>
-                    </li>
-                    <li class="flex items-start">
-                        <i class="fas fa-check text-green-500 mt-1 mr-3"></i>
-                        <span>Include in your social media profiles</span>
-                    </li>
-                    <li class="flex items-start">
-                        <i class="fas fa-check text-green-500 mt-1 mr-3"></i>
-                        <span>Print QR code for business cards</span>
-                    </li>
-                </ul>
-            </div>
+        <!-- Tips -->
+        <div class="mt-8 p-6 bg-yellow-50 rounded-xl border border-yellow-200">
+            <h3 class="font-bold text-yellow-800 mb-3 flex items-center gap-2">
+                <i class="fas fa-lightbulb"></i>
+                Tips for Sharing Your Profile
+            </h3>
+            <ul class="space-y-2 text-yellow-700">
+                <li class="flex items-start gap-2">
+                    <i class="fas fa-check mt-1"></i>
+                    <span>Add your profile link to your LinkedIn bio</span>
+                </li>
+                <li class="flex items-start gap-2">
+                    <i class="fas fa-check mt-1"></i>
+                    <span>Include it in your email signature</span>
+                </li>
+                <li class="flex items-start gap-2">
+                    <i class="fas fa-check mt-1"></i>
+                    <span>Share on relevant social media groups</span>
+                </li>
+                <li class="flex items-start gap-2">
+                    <i class="fas fa-check mt-1"></i>
+                    <span>Add to your personal website or portfolio</span>
+                </li>
+            </ul>
         </div>
     </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
 <script>
-// Copy to clipboard
-function copyToClipboard() {
-    const input = document.getElementById('profileLink');
-    input.select();
-    document.execCommand('copy');
-    alert('Link copied to clipboard!');
-}
-
-// Generate QR Code
-QRCode.toCanvas(document.getElementById('qrcode'), '{{ profile_url }}', {
-    width: 192,
-    margin: 1,
-    color: {
-        dark: '#2563eb',
-        light: '#ffffff'
-    }
-});
-
-// Share functions
-function shareOnWhatsApp() {
-    const text = `Check out my mentor profile on ClearQ: {{ profile_url }}`;
-    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+function copyProfileLink() {
+    const link = '{{ request.host_url }}mentor/profile/{{ current_user.id }}';
+    navigator.clipboard.writeText(link).then(() => {
+        alert('Profile link copied to clipboard!');
+    });
 }
 
 function shareOnLinkedIn() {
-    const url = '{{ profile_url }}';
-    window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`, '_blank');
+    const url = encodeURIComponent('{{ request.host_url }}mentor/profile/{{ current_user.id }}');
+    window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${url}`, '_blank');
 }
 
 function shareOnTwitter() {
-    const text = `Check out my mentor profile on ClearQ! {{ profile_url }}`;
-    window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`, '_blank');
+    const url = encodeURIComponent('{{ request.host_url }}mentor/profile/{{ current_user.id }}');
+    const text = encodeURIComponent(`Check out my mentor profile on ClearQ! I'm available for {{ current_user.services or "mentorship sessions" }}.`);
+    window.open(`https://twitter.com/intent/tweet?url=${url}&text=${text}`, '_blank');
 }
 
-function shareViaEmail() {
-    const subject = 'My ClearQ Mentor Profile';
-    const body = `Hi,\n\nCheck out my mentor profile on ClearQ:\n{{ profile_url }}\n\nBest regards,\n{{ current_user.full_name }}`;
-    window.location.href = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+function shareOnWhatsApp() {
+    const url = encodeURIComponent('{{ request.host_url }}mentor/profile/{{ current_user.id }}');
+    const text = encodeURIComponent(`Check out my mentor profile on ClearQ! ${document.title}`);
+    window.open(`https://wa.me/?text=${text}%20${url}`, '_blank');
+}
+
+function shareByEmail() {
+    const url = '{{ request.host_url }}mentor/profile/{{ current_user.id }}';
+    const subject = encodeURIComponent('My Mentor Profile on ClearQ');
+    const body = encodeURIComponent(`Hi,\n\nCheck out my mentor profile on ClearQ:\n${url}\n\nI'm available for: {{ current_user.services or "mentorship sessions" }}\n\nBest regards,\n{{ current_user.full_name or current_user.username }}`);
+    window.open(`mailto:?subject=${subject}&body=${body}`);
 }
 </script>
 {% endblock %}
