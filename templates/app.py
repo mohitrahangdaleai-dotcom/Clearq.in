@@ -74,9 +74,15 @@ class Booking(db.Model):
     mentor_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     learner_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     service_name = db.Column(db.String(100))
-    slot_time = db.Column(db.String(50))
-    status = db.Column(db.String(20), default='Pending')  # Pending, Paid, Completed
-    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=True)
+    booking_date = db.Column(db.Date)  # Date of booking
+    booking_time = db.Column(db.String(50))  # Time of booking
+    duration = db.Column(db.Integer, default=60)  # Duration in minutes
+    status = db.Column(db.String(20), default='Pending')
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # Add meeting link field
+    meeting_link = db.Column(db.String(500))
+    notes = db.Column(db.Text)  # Additional notes
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -319,7 +325,18 @@ def explore():
                          mentors=all_mentors, 
                          recommendations=recommendations, 
                          query=query)
-
+@app.route('/profile/link')
+@login_required
+def manage_profile_link():
+    """Manage mentor's public profile link"""
+    if current_user.role != 'mentor':
+        flash('Only mentors can manage profile links')
+        return redirect(url_for('dashboard'))
+    
+    # Get mentor's bookings
+    bookings = Booking.query.filter_by(mentor_id=current_user.id).all()
+    
+    return render_template('manage_profile_link.html', bookings=bookings)
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
@@ -811,3 +828,4 @@ with app.app_context():
 
 if __name__ == '__main__':
     app.run(debug=True)
+
