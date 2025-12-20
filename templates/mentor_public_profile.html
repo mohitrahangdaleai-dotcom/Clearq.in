@@ -227,7 +227,7 @@
                     <div class="space-y-4">
                         <div class="flex items-center justify-between">
                             <span>Sessions Completed</span>
-                            <span class="font-bold">50+</span>
+                            <span class="font-bold">{{ total_bookings }}+</span>
                         </div>
                         <div class="flex items-center justify-between">
                             <span>Average Rating</span>
@@ -240,6 +240,10 @@
                         <div class="flex items-center justify-between">
                             <span>Session Price</span>
                             <span class="font-bold">₹{{ mentor.price or 0 }}</span>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <span>Profile Views</span>
+                            <span class="font-bold">{{ mentor.profile_views or 0 }}</span>
                         </div>
                     </div>
                 </div>
@@ -254,39 +258,4 @@
                         <button onclick="shareOnLinkedIn()" class="flex-1 p-3 bg-blue-700 text-white rounded-xl hover:bg-blue-800 transition-colors">
                             <i class="fab fa-linkedin-in"></i>
                         </button>
-                        <button onclick="shareOnWhatsApp()" class="flex-1 p-3 bg-green-100 text-green-600 rounded-xl hover:bg-green-200 transition-colors">
-                            <i class="fab fa-whatsapp"></i>
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<script>
-function copyProfileLink() {
-    const link = window.location.href;
-    navigator.clipboard.writeText(link).then(() => {
-        alert('Profile link copied to clipboard!');
-    });
-}
-
-function shareOnTwitter() {
-    const url = encodeURIComponent(window.location.href);
-    const text = encodeURIComponent(`Check out ${document.title} on ClearQ`);
-    window.open(`https://twitter.com/intent/tweet?url=${url}&text=${text}`, '_blank');
-}
-
-function shareOnLinkedIn() {
-    const url = encodeURIComponent(window.location.href);
-    window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${url}`, '_blank');
-}
-
-function shareOnWhatsApp() {
-    const url = encodeURIComponent(window.location.href);
-    const text = encodeURIComponent(`Check out this mentor profile: ${document.title}`);
-    window.open(`https://wa.me/?text=${text}%20${url}`, '_blank');
-}
-</script>
-{% endblock %}
+                        <button onclick="shareOnWhatsApp()" class="flex-1 p-3 bg-green-100 text-green-600 rounded-xl hover:bg-green-200
