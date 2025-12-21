@@ -684,7 +684,7 @@ def mentor_public_profile(id):
                          total_bookings=total_bookings)
 
 # ADD THIS ROUTE - IT WAS MISSING!
-@app.route('/profile/link')
+@app.route('/profile/link', endpoint='manage_profile_link')
 @login_required
 def manage_profile_link():
     """Manage mentor's public profile link"""
@@ -835,3 +835,4 @@ with app.app_context():
 
 if __name__ == '__main__':
     app.run(debug=True)
+
