@@ -52,8 +52,8 @@ class User(UserMixin, db.Model):
     is_verified = db.Column(db.Boolean, default=False)
     
     # Profile stats
-    profile_views = db.Column(db.Integer, default=0)
-    link_clicks = db.Column(db.Integer, default=0)
+    #profile_views = db.Column(db.Integer, default=0)
+    #link_clicks = db.Column(db.Integer, default=0)
     
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
@@ -901,3 +901,4 @@ with app.app_context():
 
 if __name__ == '__main__':
     app.run(debug=True)
+
