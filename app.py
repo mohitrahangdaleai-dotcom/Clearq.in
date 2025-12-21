@@ -2,14 +2,12 @@ import os
 import json
 import random
 from datetime import datetime, date, timedelta
-from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
+from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, abort
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import linear_kernel
-from sqlalchemy import or_
-
 
 # --- FORCE FLASK TO FIND TEMPLATES ---
 basedir = os.path.abspath(os.path.dirname(__file__))
@@ -407,94 +405,7 @@ def register():
             return redirect(url_for('login'))
     
     return render_template('register.html')
-@app.route('/<username>')
-def mentor_by_username(username):
-    """Public profile page accessible via username (like LinkedIn)"""
-    user = User.query.filter_by(username=username).first()
-    
-    if not user:
-        flash('User not found')
-        return redirect(url_for('explore'))
-    
-    if user.role != 'mentor':
-        flash('This user is not a mentor')
-        return redirect(url_for('explore'))
-    
-    # Increment profile views
-    user.profile_views += 1
-    db.session.commit()
-    
-    # Get mentor stats
-    total_bookings = Booking.query.filter_by(mentor_id=user.id).count()
-    
-    return render_template('mentor_public_profile.html', 
-                         mentor=user, 
-                         total_bookings=total_bookings)
 
-@app.route('/@<username>')
-def mentor_profile_short(username):
-    """Alternative short URL format: /@username"""
-    return redirect(url_for('mentor_by_username', username=username))
-
-# Keep the original ID-based route for backward compatibility
-@app.route('/mentor/profile/<int:id>')
-def mentor_public_profile(id):
-    """Public profile page for mentors (like LinkedIn) - ID-based version"""
-    mentor = User.query.get_or_404(id)
-    if mentor.role != 'mentor':
-        flash('User is not a mentor')
-        return redirect(url_for('explore'))
-    
-    # Increment profile views
-    mentor.profile_views += 1
-    db.session.commit()
-    
-    # Get mentor stats
-    total_bookings = Booking.query.filter_by(mentor_id=id).count()
-    
-    return render_template('mentor_public_profile.html', 
-                         mentor=mentor, 
-                         total_bookings=total_bookings)
-
-# Update the manage_profile_link route to use username
-@app.route('/profile/link', endpoint='manage_profile_link')
-@login_required
-def manage_profile_link():
-    """Manage mentor's public profile link"""
-    if current_user.role != 'mentor':
-        flash('Only mentors can manage profile links')
-        return redirect(url_for('dashboard'))
-    
-    # Generate profile URLs
-    profile_urls = {
-        'clean_url': f"{request.host_url}{current_user.username}",
-        'short_url': f"{request.host_url}@{current_user.username}",
-        'id_url': f"{request.host_url}mentor/profile/{current_user.id}"
-    }
-    
-    bookings = Booking.query.filter_by(mentor_id=current_user.id).all()
-    
-    return render_template('manage_profile_link.html', 
-                         bookings=bookings,
-                         profile_urls=profile_urls)
-
-# Add a route to track link clicks
-@app.route('/track/<int:mentor_id>/<path:action>')
-def track_click(mentor_id, action):
-    """Track profile link clicks and redirect to profile"""
-    mentor = User.query.get(mentor_id)
-    
-    if mentor and mentor.role == 'mentor':
-        if action == 'profile_view':
-            mentor.profile_views += 1
-        elif action == 'link_click':
-            mentor.link_clicks += 1
-        db.session.commit()
-        
-        return redirect(url_for('mentor_by_username', username=mentor.username))
-    
-    return redirect(url_for('explore'))
-    
 @app.route('/enroll', methods=['GET', 'POST'])
 def enroll():
     """Enrollment page for mentorship program"""
@@ -753,9 +664,49 @@ def mentor_detail(id):
                          services=services,
                          today=today)
 
+# --- CLEAN USERNAME-BASED PROFILE URLS ---
+
+@app.route('/<username>')
+def mentor_by_username(username):
+    """Public profile page accessible via username (like LinkedIn)"""
+    # Skip if username matches existing routes
+    existing_routes = ['login', 'register', 'explore', 'dashboard', 'enroll', 'profile', 
+                      'mentor', 'admin', 'check-data', 'add-sample-mentors', 'debug',
+                      'edit-profile', 'mentorship-program', 'logout']
+    
+    if username in existing_routes:
+        abort(404)
+    
+    user = User.query.filter_by(username=username).first()
+    
+    if not user:
+        flash('User not found')
+        return redirect(url_for('explore'))
+    
+    if user.role != 'mentor':
+        flash('This user is not a mentor')
+        return redirect(url_for('explore'))
+    
+    # Increment profile views
+    user.profile_views += 1
+    db.session.commit()
+    
+    # Get mentor stats
+    total_bookings = Booking.query.filter_by(mentor_id=user.id).count()
+    
+    return render_template('mentor_public_profile.html', 
+                         mentor=user, 
+                         total_bookings=total_bookings)
+
+@app.route('/@<username>')
+def mentor_profile_short(username):
+    """Alternative short URL format: /@username"""
+    return redirect(url_for('mentor_by_username', username=username))
+
+# Keep the original ID-based route for backward compatibility
 @app.route('/mentor/profile/<int:id>')
 def mentor_public_profile(id):
-    """Public profile page for mentors (like LinkedIn)"""
+    """Public profile page for mentors (like LinkedIn) - ID-based version"""
     mentor = User.query.get_or_404(id)
     if mentor.role != 'mentor':
         flash('User is not a mentor')
@@ -772,7 +723,7 @@ def mentor_public_profile(id):
                          mentor=mentor, 
                          total_bookings=total_bookings)
 
-# ADD THIS ROUTE - IT WAS MISSING!
+# Profile link management route
 @app.route('/profile/link', endpoint='manage_profile_link')
 @login_required
 def manage_profile_link():
@@ -781,9 +732,35 @@ def manage_profile_link():
         flash('Only mentors can manage profile links')
         return redirect(url_for('dashboard'))
     
+    # Generate profile URLs
+    base_url = request.host_url.rstrip('/')
+    profile_urls = {
+        'clean_url': f"{base_url}/{current_user.username}",
+        'short_url': f"{base_url}/@{current_user.username}",
+        'id_url': f"{base_url}/mentor/profile/{current_user.id}"
+    }
+    
     bookings = Booking.query.filter_by(mentor_id=current_user.id).all()
     
-    return render_template('manage_profile_link.html', bookings=bookings)
+    return render_template('manage_profile_link.html', 
+                         bookings=bookings,
+                         profile_urls=profile_urls)
+
+@app.route('/track/<int:mentor_id>/<path:action>')
+def track_click(mentor_id, action):
+    """Track profile link clicks and redirect to profile"""
+    mentor = User.query.get(mentor_id)
+    
+    if mentor and mentor.role == 'mentor':
+        if action == 'profile_view':
+            mentor.profile_views += 1
+        elif action == 'link_click':
+            mentor.link_clicks += 1
+        db.session.commit()
+        
+        return redirect(url_for('mentor_by_username', username=mentor.username))
+    
+    return redirect(url_for('explore'))
 
 @app.route('/dashboard')
 @login_required
@@ -924,5 +901,3 @@ with app.app_context():
 
 if __name__ == '__main__':
     app.run(debug=True)
-
-
